@@ -60,6 +60,10 @@
     color: inherit;
   }
 
+  .cm-s-easymde .cm-quote {
+    color: red;
+  }
+
   // Overriding the lbry/components form styling
   .editor-toolbar {
     button:not(.button) {
