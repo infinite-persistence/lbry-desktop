@@ -1,6 +1,7 @@
 // @flow
 import * as ICONS from 'constants/icons';
 import * as RENDER_MODES from 'constants/file_render_modes';
+import { INLINE_PLAYER_WRAPPER_CLASS } from 'constants/classnames';
 import React, { useEffect, useState } from 'react';
 import Button from 'component/button';
 import classnames from 'classnames';
@@ -17,7 +18,6 @@ import { useHistory } from 'react-router';
 
 const IS_DESKTOP_MAC = typeof process === 'object' ? process.platform === 'darwin' : false;
 const DEBOUNCE_WINDOW_RESIZE_HANDLER_MS = 60;
-export const INLINE_PLAYER_WRAPPER_CLASS = 'inline-player__wrapper';
 
 type Props = {
   isFloating: boolean,
