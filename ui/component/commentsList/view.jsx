@@ -1,7 +1,12 @@
 // @flow
 import * as REACTION_TYPES from 'constants/reactions';
 import * as ICONS from 'constants/icons';
-import { SORT_COMMENTS_NEW, SORT_COMMENTS_BEST, SORT_COMMENTS_CONTROVERSIAL } from 'constants/comment';
+import {
+  SORT_COMMENTS_NEW,
+  SORT_COMMENTS_BEST,
+  SORT_COMMENTS_CONTROVERSIAL,
+  COMMENT_LIST_PAGE_SIZE,
+} from 'constants/comment';
 import React, { useEffect } from 'react';
 import classnames from 'classnames';
 import CommentView from 'component/comment';
@@ -11,13 +16,13 @@ import Card from 'component/common/card';
 import CommentCreate from 'component/commentCreate';
 import usePersistedState from 'effects/use-persisted-state';
 import { ENABLE_COMMENT_REACTIONS } from 'config';
-import { sortComments } from 'util/comments';
 import Empty from 'component/common/empty';
 
 type Props = {
-  comments: Array<Comment>,
+  topLevelComments: Array<Comment>,
   commentsDisabledBySettings: boolean,
-  fetchComments: (string) => void,
+  resetComments: (string) => void,
+  fetchTopLevelComments: (string, number, number) => void,
   fetchReacts: (string) => Promise<any>,
   uri: string,
   claimIsMine: boolean,
@@ -25,6 +30,7 @@ type Props = {
   isFetchingComments: boolean,
   linkedComment: any,
   totalComments: number,
+  totalTopLevelComments: number,
   fetchingChannels: boolean,
   reactionsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
   activeChannelId: ?string,
@@ -32,16 +38,18 @@ type Props = {
 
 function CommentList(props: Props) {
   const {
-    fetchComments,
+    resetComments,
+    fetchTopLevelComments,
     fetchReacts,
     uri,
-    comments,
+    topLevelComments,
     commentsDisabledBySettings,
     claimIsMine,
     myChannels,
     isFetchingComments,
     linkedComment,
     totalComments,
+    totalTopLevelComments,
     fetchingChannels,
     reactionsById,
     activeChannelId,
@@ -53,17 +61,21 @@ function CommentList(props: Props) {
     ENABLE_COMMENT_REACTIONS ? SORT_COMMENTS_BEST : SORT_COMMENTS_NEW
   );
 
-  const [start] = React.useState(0);
-  const [end, setEnd] = React.useState(9);
+  // const [start] = React.useState(0);
+  // const [end, setEnd] = React.useState(1);
+
+  const [page, setPage] = React.useState(1);
+
   // Display comments immediately if not fetching reactions
   // If not, wait to show comments until reactions are fetched
   const [readyToDisplayComments, setReadyToDisplayComments] = React.useState(
     Boolean(reactionsById) || !ENABLE_COMMENT_REACTIONS
   );
-  const [justCommented] = React.useState([]);
+
   const linkedCommentId = linkedComment && linkedComment.comment_id;
   const hasNoComments = !totalComments;
-  const moreBelow = totalComments - end > 0;
+  const moreBelow = totalTopLevelComments - topLevelComments.length > 0;
+
   const isMyComment = (channelId: string): boolean => {
     if (myChannels != null && channelId != null) {
       for (let i = 0; i < myChannels.length; i++) {
@@ -75,15 +87,20 @@ function CommentList(props: Props) {
     return false;
   };
 
-  const handleMoreBelow = React.useCallback(() => {
-    if (moreBelow) {
-      setEnd(end + 10);
-    }
-  }, [end, setEnd, moreBelow]);
+  // const handleMoreBelow = React.useCallback(() => {
+  //   if (moreBelow) {
+  //     setEnd(end + 10);
+  //   }
+  // }, [end, setEnd, moreBelow]);
 
+  // Fetch top-level comments
   useEffect(() => {
-    fetchComments(uri);
-  }, [fetchComments, uri]);
+    console.log('fetchTopLevelComments: page:', page);
+    if (page === 1) {
+      resetComments(uri);
+    }
+    fetchTopLevelComments(uri, page, COMMENT_LIST_PAGE_SIZE);
+  }, [fetchTopLevelComments, uri, page]);
 
   useEffect(() => {
     if (totalComments && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
@@ -116,7 +133,11 @@ function CommentList(props: Props) {
         rect.right <= (window.innerWidth || document.documentElement.clientWidth);
 
       if (isInViewport) {
-        handleMoreBelow();
+        // handleMoreBelow();
+        if (topLevelComments.length < totalTopLevelComments) {
+          console.log('setPage():', page, '-->', page + 1);
+          setPage(page + 1);
+        }
       }
     }
 
@@ -125,7 +146,7 @@ function CommentList(props: Props) {
     }
 
     return () => window.removeEventListener('scroll', handleCommentScroll);
-  }, [moreBelow, handleMoreBelow, spinnerRef, isFetchingComments, readyToDisplayComments]);
+  }, [moreBelow, /* handleMoreBelow, */ spinnerRef, isFetchingComments, readyToDisplayComments]);
 
   function prepareComments(arrayOfComments, linkedComment, isFetchingComments) {
     let orderedComments = [];
@@ -148,13 +169,15 @@ function CommentList(props: Props) {
     return orderedComments;
   }
 
-  // Default to newest first for apps that don't have comment reactions
-  const sortedComments = reactionsById
-    ? sortComments({ comments, reactionsById, sort, isMyComment, justCommented })
-    : [];
-  const displayedComments = readyToDisplayComments
-    ? prepareComments(sortedComments, linkedComment).slice(start, end)
-    : [];
+  // // Default to newest first for apps that don't have comment reactions
+  // const sortedComments = reactionsById
+  //   ? sortComments({ comments: topLevelComments, reactionsById, sort, isMyComment })
+  //   : [];
+  // const displayedComments = readyToDisplayComments
+  //   ? prepareComments(sortedComments, linkedComment).slice(start, end)
+  //   : [];
+
+  const displayedComments = readyToDisplayComments ? prepareComments(topLevelComments, linkedComment) : [];
 
   return (
     <Card
@@ -206,7 +229,7 @@ function CommentList(props: Props) {
             icon={ICONS.REFRESH}
             title={__('Refresh')}
             onClick={() => {
-              fetchComments(uri);
+              setPage(1);
               fetchReacts(uri);
             }}
           />
@@ -214,14 +237,14 @@ function CommentList(props: Props) {
       }
       actions={
         <>
-          <CommentCreate uri={uri} justCommented={justCommented} />
+          <CommentCreate uri={uri} />
 
           {!commentsDisabledBySettings && !isFetchingComments && hasNoComments && (
             <Empty padded text={__('That was pretty deep. What do you think?')} />
           )}
 
           <ul className="comments" ref={commentRef}>
-            {comments &&
+            {topLevelComments &&
               displayedComments &&
               displayedComments.map((comment) => {
                 return (
@@ -241,6 +264,7 @@ function CommentList(props: Props) {
                     linkedComment={linkedComment}
                     isPinned={comment.is_pinned}
                     supportAmount={comment.support_amount}
+                    numDirectReplies={comment.replies}
                   />
                 );
               })}

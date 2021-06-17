@@ -3,11 +3,14 @@ import * as ACTIONS from 'constants/action_types';
 import { handleActions } from 'util/redux-utils';
 import { BLOCK_LEVEL } from 'constants/comment';
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 const defaultState: CommentsState = {
   commentById: {}, // commentId -> Comment
   byId: {}, // ClaimID -> list of comments
   repliesByParentId: {}, // ParentCommentID -> list of reply comments
   topLevelCommentsById: {}, // ClaimID -> list of top level comments
+  totalTopLevelCommentsById: {}, // ClaimID -> total top level comments in commentron
   // TODO:
   // Remove commentsByUri
   // It is not needed and doesn't provide anything but confusion
@@ -58,6 +61,7 @@ export default handleActions(
         uri,
         livestream,
       }: { comment: Comment, claimId: string, uri: string, livestream: boolean } = action.data;
+
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
@@ -80,6 +84,11 @@ export default handleActions(
             repliesByParentId[comment.parent_id] = [comment.comment_id];
           } else {
             repliesByParentId[comment.parent_id].unshift(comment.comment_id);
+          }
+
+          // Update the parent's "replies" value
+          if (commentById[comment.parent_id]) {
+            commentById[comment.parent_id].replies = repliesByParentId[comment.parent_id].length;
           }
         } else {
           if (!topLevelCommentsById[claimId]) {
@@ -177,7 +186,7 @@ export default handleActions(
     [ACTIONS.COMMENT_LIST_STARTED]: (state) => ({ ...state, isLoading: true }),
 
     [ACTIONS.COMMENT_LIST_COMPLETED]: (state: CommentsState, action: any) => {
-      const { comments, claimId, uri, disabled, authorClaimId } = action.data;
+      const { comments, topLevel, totalItems, claimId, uri, disabled, authorClaimId } = action.data;
       const commentsDisabledChannelIds = [...state.commentsDisabledChannelIds];
 
       if (disabled) {
@@ -200,10 +209,10 @@ export default handleActions(
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
+      const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
       const commentsByUri = Object.assign({}, state.commentsByUri);
+      const repliesByParentId = Object.assign({}, state.repliesByParentId);
 
-      const tempRepliesByParent = {};
-      const topLevelComments = [];
       if (comments) {
         // we use an Array to preserve order of listing
         // in reality this doesn't matter and we can just
@@ -211,32 +220,48 @@ export default handleActions(
         const commentIds = Array(comments.length);
 
         // map the comment_ids to the new comments
-        for (let i = 0; i < comments.length; i++) {
-          const comment = comments[i];
-          if (comment['parent_id']) {
-            if (!tempRepliesByParent[comment.parent_id]) {
-              tempRepliesByParent[comment.parent_id] = [comment.comment_id];
-            } else {
-              tempRepliesByParent[comment.parent_id].push(comment.comment_id);
-            }
-          } else {
-            commentById[comment.comment_id] = comment;
-            topLevelComments.push(comment.comment_id);
-          }
-          commentIds[i] = comments[i].comment_id;
-          commentById[commentIds[i]] = comments[i];
-        }
-        topLevelCommentsById[claimId] = topLevelComments;
+        if (topLevel) {
+          totalTopLevelCommentsById[claimId] = totalItems;
 
-        byId[claimId] = commentIds;
+          if (!topLevelCommentsById[claimId]) {
+            topLevelCommentsById[claimId] = [];
+          }
+
+          const topLevelCommentsForId = topLevelCommentsById[claimId];
+
+          for (let i = 0; i < comments.length; ++i) {
+            const comment = comments[i];
+            commentById[comment.comment_id] = comment;
+            commentIds[i] = comment.comment_id;
+
+            if (IS_DEV && comment['parent_id']) console.error('Invalid top-level comment:', comment);
+
+            topLevelCommentsForId.push(comment.comment_id);
+          }
+        } else {
+          for (let i = 0; i < comments.length; ++i) {
+            const comment = comments[i];
+            commentById[comment.comment_id] = comment;
+            commentIds[i] = comment.comment_id;
+
+            if (IS_DEV && !comment['parent_id']) console.error('Missing parent_id:', comment);
+
+            if (!repliesByParentId[comment.parent_id]) {
+              repliesByParentId[comment.parent_id] = [comment.comment_id];
+            } else if (!repliesByParentId[comment.parent_id].includes(comment.comment_id)) {
+              repliesByParentId[comment.parent_id].push(comment.comment_id);
+            }
+          }
+        }
+
+        byId[claimId] ? byId[claimId].push(...commentIds) : (byId[claimId] = commentIds);
         commentsByUri[uri] = claimId;
       }
-
-      const repliesByParentId = Object.assign({}, state.repliesByParentId, tempRepliesByParent); // {ParentCommentID -> [commentIds...] } list of reply comments
 
       return {
         ...state,
         topLevelCommentsById,
+        totalTopLevelCommentsById,
         repliesByParentId,
         byId,
         commentById,
@@ -272,6 +297,25 @@ export default handleActions(
       ...state,
       isLoading: false,
     }),
+
+    [ACTIONS.COMMENT_LIST_RESET]: (state: CommentsState, action: any) => {
+      const { claimId } = action.data;
+
+      const byId = Object.assign({}, state.byId);
+      const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
+      const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
+
+      delete topLevelCommentsById[claimId];
+      delete byId[claimId];
+      delete totalTopLevelCommentsById[claimId];
+
+      return {
+        ...state,
+        byId,
+        topLevelCommentsById,
+        totalTopLevelCommentsById,
+      };
+    },
 
     [ACTIONS.COMMENT_RECEIVED]: (state: CommentsState, action: any) => {
       const { uri, claimId, comment } = action.data;
@@ -352,15 +396,31 @@ export default handleActions(
       const { comment_id } = action.data;
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
+      const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
+
+      const comment = commentById[comment_id];
 
       // to remove the comment and its references
-      const claimId = commentById[comment_id].claim_id;
+      const claimId = comment.claim_id;
       for (let i = 0; i < byId[claimId].length; i++) {
         if (byId[claimId][i] === comment_id) {
           byId[claimId].splice(i, 1);
           break;
         }
       }
+
+      // Update replies
+      if (comment['parent_id'] && repliesByParentId[comment.parent_id]) {
+        const index = repliesByParentId[comment.parent_id].indexOf(comment.comment_id);
+        if (index > -1) {
+          repliesByParentId[comment.parent_id].splice(index, 1);
+
+          if (commentById[comment.parent_id]) {
+            commentById[comment.parent_id].replies = repliesByParentId[comment.parent_id].length;
+          }
+        }
+      }
+
       delete commentById[comment_id];
 
       return {
