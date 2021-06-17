@@ -13,6 +13,7 @@ declare type Comment = {
   parent_id?: number, // comment_id of comment this is in reply to
   is_pinned: boolean,
   support_amount: number,
+  replies: number, // number of direct replies (i.e. excluding nested replies).
 };
 
 declare type PerChannelSettings = {
@@ -28,10 +29,14 @@ declare type CommentsState = {
   commentsByUri: { [string]: string },
   superChatsByUri: { [string]: { totalAmount: number, comments: Array<Comment> } },
   byId: { [string]: Array<string> },
-  repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of reply comments
-  topLevelCommentsById: { [string]: Array<string> }, // ClaimID -> list of top level comments
+  totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron
+  repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of reply comments (fetched)
+  totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
+  topLevelCommentsById: { [string]: Array<string> }, // ClaimID -> list of top level comments (fetched)
+  totalTopLevelCommentsById: { [string]: number }, // ClaimID -> total top level comments in commentron
   commentById: { [string]: Comment },
   isLoading: boolean,
+  isLoadingByParentId: { [string]: boolean },
   myComments: ?Set<string>,
   isFetchingReacts: boolean,
   myReactsByCommentId: any,
@@ -72,6 +77,7 @@ declare type CommentListParams = {
 
 declare type CommentListResponse = {
   items: Array<Comment>,
+  total_items: number,
   total_amount: number,
 };
 
