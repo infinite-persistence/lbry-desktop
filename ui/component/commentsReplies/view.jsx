@@ -3,33 +3,53 @@ import * as ICONS from 'constants/icons';
 import React from 'react';
 import Comment from 'component/comment';
 import Button from 'component/button';
+import Spinner from 'component/spinner';
 
 type Props = {
   comments: Array<any>,
   uri: string,
+  parentId: string,
   claimIsMine: boolean,
   myChannels: ?Array<ChannelClaim>,
   linkedComment?: Comment,
   commentingEnabled: boolean,
   threadDepth: number,
+  numDirectReplies: number,
+  isFetchingByParentId: { [string]: boolean },
+  onShowMore?: () => void,
 };
 
 function CommentsReplies(props: Props) {
-  const { uri, comments, claimIsMine, myChannels, linkedComment, commentingEnabled, threadDepth } = props;
+  const {
+    uri,
+    parentId,
+    comments,
+    claimIsMine,
+    myChannels,
+    linkedComment,
+    commentingEnabled,
+    threadDepth,
+    numDirectReplies,
+    isFetchingByParentId,
+    onShowMore,
+  } = props;
+
   const [isExpanded, setExpanded] = React.useState(true);
-  const [start, setStart] = React.useState(0);
-  const [end, setEnd] = React.useState(9);
-  const sortedComments = comments ? [...comments].reverse() : [];
-  const numberOfComments = comments ? comments.length : 0;
-  const linkedCommentId = linkedComment ? linkedComment.comment_id : '';
-  const commentsIndexOfLInked = comments && sortedComments.findIndex((e) => e.comment_id === linkedCommentId);
+  // const [start, setStart] = React.useState(0);
+  // const [end, setEnd] = React.useState(COMMENT_PAGE_SIZE_REPLIES);
+  // const sortedComments = comments ? [...comments].reverse() : [];
+  // const linkedCommentId = linkedComment ? linkedComment.comment_id : '';
+  // const commentsIndexOfLInked = comments && sortedComments.findIndex((e) => e.comment_id === linkedCommentId);
 
   function showMore() {
-    if (start > 0) {
-      setStart(0);
-    } else {
-      setEnd(numberOfComments);
+    if (onShowMore) {
+      onShowMore();
     }
+    // if (start > 0) {
+    //   setStart(0);
+    // } else {
+    //   setEnd(numDirectReplies);
+    // }
   }
 
   // todo: implement comment_list --mine in SDK so redux can grab with selectCommentIsMine
@@ -44,35 +64,29 @@ function CommentsReplies(props: Props) {
     return false;
   }
 
-  function handleCommentDone() {
-    if (!isExpanded) {
-      setExpanded(true);
-      setStart(numberOfComments || 0);
-    }
-    setEnd(numberOfComments + 1);
-  }
+  // React.useEffect(() => {
+  //   if (
+  //     setStart &&
+  //     setEnd &&
+  //     setExpanded &&
+  //     linkedCommentId &&
+  //     Number.isInteger(commentsIndexOfLInked) &&
+  //     commentsIndexOfLInked > -1
+  //   ) {
+  //     setStart(commentsIndexOfLInked);
+  //     setEnd(commentsIndexOfLInked + 1);
+  //     setExpanded(true);
+  //   }
+  // }, [setStart, setEnd, setExpanded, linkedCommentId, commentsIndexOfLInked]);
 
-  React.useEffect(() => {
-    if (
-      setStart &&
-      setEnd &&
-      setExpanded &&
-      linkedCommentId &&
-      Number.isInteger(commentsIndexOfLInked) &&
-      commentsIndexOfLInked > -1
-    ) {
-      setStart(commentsIndexOfLInked);
-      setEnd(commentsIndexOfLInked + 1);
-      setExpanded(true);
-    }
-  }, [setStart, setEnd, setExpanded, linkedCommentId, commentsIndexOfLInked]);
+  // [] linked comments
 
-  const displayedComments = sortedComments.slice(start, end);
+  const displayedComments = comments; // .slice(start, end);
 
   return (
-    Boolean(numberOfComments) && (
+    Boolean(numDirectReplies) && (
       <div className="comment__replies-container">
-        {Boolean(numberOfComments) && !isExpanded && (
+        {Boolean(numDirectReplies) && !isExpanded && (
           <div className="comment__actions--nested">
             <Button
               className="comment__action"
@@ -88,7 +102,7 @@ function CommentsReplies(props: Props) {
               <Button className="comment__threadline" aria-label="Hide Replies" onClick={() => setExpanded(false)} />
 
               <ul className="comments--replies">
-                {displayedComments.map((comment, index) => {
+                {displayedComments.map((comment) => {
                   return (
                     <Comment
                       threadDepth={threadDepth}
@@ -104,8 +118,8 @@ function CommentsReplies(props: Props) {
                       commentIsMine={comment.channel_id && isMyComment(comment.channel_id)}
                       linkedComment={linkedComment}
                       commentingEnabled={commentingEnabled}
-                      handleCommentDone={handleCommentDone}
                       supportAmount={comment.support_amount}
+                      numDirectReplies={comment.replies}
                     />
                   );
                 })}
@@ -113,9 +127,16 @@ function CommentsReplies(props: Props) {
             </div>
           </div>
         )}
-        {isExpanded && comments && (end < numberOfComments || start > 0) && (
-          <div className="comment__actions">
+        {isExpanded && comments && displayedComments.length < numDirectReplies && (
+          <div className="comment__actions--nested">
             <Button button="link" label={__('Show more')} onClick={showMore} className="button--uri-indicator" />
+          </div>
+        )}
+        {isFetchingByParentId[parentId] && (
+          <div className="comment__replies-container">
+            <div className="comment__actions--nested">
+              <Spinner type="small" />
+            </div>
           </div>
         )}
       </div>
