@@ -9,3 +9,5 @@ export const BLOCK_LEVEL = {
   MODERATOR: 'moderator',
   ADMIN: 'admin',
 };
+
+export const COMMENT_LIST_PAGE_SIZE = 5;

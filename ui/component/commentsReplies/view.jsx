@@ -106,6 +106,7 @@ function CommentsReplies(props: Props) {
                       commentingEnabled={commentingEnabled}
                       handleCommentDone={handleCommentDone}
                       supportAmount={comment.support_amount}
+                      numDirectReplies={comment.replies}
                     />
                   );
                 })}

@@ -13,6 +13,7 @@ declare type Comment = {
   parent_id?: number, // comment_id of comment this is in reply to
   is_pinned: boolean,
   support_amount: number,
+  replies: number, // number of direct replies (i.e. excluding nested replies).
 };
 
 declare type PerChannelSettings = {
@@ -30,6 +31,7 @@ declare type CommentsState = {
   byId: { [string]: Array<string> },
   repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of reply comments
   topLevelCommentsById: { [string]: Array<string> }, // ClaimID -> list of top level comments
+  totalTopLevelCommentsById: { [string]: number }, // ClaimID -> total top level comments in commentron
   commentById: { [string]: Comment },
   isLoading: boolean,
   myComments: ?Set<string>,
@@ -72,6 +74,7 @@ declare type CommentListParams = {
 
 declare type CommentListResponse = {
   items: Array<Comment>,
+  total_items: number,
   total_amount: number,
 };
 

@@ -36,6 +36,7 @@ type Props = {
   claimIsMine: boolean, // if you control the claim which this comment was posted on
   commentIsMine: boolean, // if this comment was signed by an owned channel
   updateComment: (string, string) => void,
+  fetchReplies: (string, string, number, number) => void,
   commentModBlock: (string) => void,
   linkedComment?: any,
   myChannels: ?Array<ChannelClaim>,
@@ -53,6 +54,7 @@ type Props = {
   playingUri: ?PlayingUri,
   stakedLevel: number,
   supportAmount: number,
+  numDirectReplies: number,
 };
 
 const LENGTH_TO_COLLAPSE = 300;
@@ -71,6 +73,7 @@ function Comment(props: Props) {
     commentIsMine,
     commentId,
     updateComment,
+    fetchReplies,
     linkedComment,
     commentingEnabled,
     myChannels,
@@ -82,6 +85,7 @@ function Comment(props: Props) {
     playingUri,
     stakedLevel,
     supportAmount,
+    numDirectReplies,
   } = props;
   const {
     push,
@@ -94,6 +98,7 @@ function Comment(props: Props) {
   const [charCount, setCharCount] = useState(editedMessage.length);
   // used for controlling the visibility of the menu icon
   const [mouseIsHovering, setMouseHover] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
   const [advancedEditor] = usePersistedState('comment-editor-mode', false);
   const [displayDeadComment, setDisplayDeadComment] = React.useState(false);
   const hasChannels = myChannels && myChannels.length > 0;
@@ -302,13 +307,41 @@ function Comment(props: Props) {
                   {ENABLE_COMMENT_REACTIONS && <CommentReactions uri={uri} commentId={commentId} />}
                 </div>
 
+                {numDirectReplies > 0 && !showReplies && (
+                  <div className="comment__actions">
+                    <Button
+                      label={
+                        numDirectReplies < 2
+                          ? __('Show reply')
+                          : __('Show %count% replies', { count: numDirectReplies })
+                      }
+                      button="link"
+                      onClick={() => {
+                        setShowReplies(true);
+                        fetchReplies(uri, commentId, 1, 99999);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {numDirectReplies > 0 && showReplies && (
+                  <div className="comment__actions">
+                    <Button label={__('Hide replies')} button="link" onClick={() => setShowReplies(false)} />
+                  </div>
+                )}
+
                 {isReplying && (
                   <CommentCreate
                     isReply
                     uri={uri}
                     parentId={commentId}
-                    onDoneReplying={() => setReplying(false)}
-                    onCancelReplying={() => setReplying(false)}
+                    onDoneReplying={() => {
+                      setShowReplies(true);
+                      setReplying(false);
+                    }}
+                    onCancelReplying={() => {
+                      setReplying(false);
+                    }}
                   />
                 )}
               </>
@@ -317,7 +350,9 @@ function Comment(props: Props) {
         </div>
       </div>
 
-      <CommentsReplies threadDepth={threadDepth - 1} uri={uri} parentId={commentId} linkedComment={linkedComment} />
+      {showReplies && (
+        <CommentsReplies threadDepth={threadDepth - 1} uri={uri} parentId={commentId} linkedComment={linkedComment} />
+      )}
     </li>
   );
 }
