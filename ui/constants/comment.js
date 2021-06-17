@@ -9,3 +9,6 @@ export const BLOCK_LEVEL = {
   MODERATOR: 'moderator',
   ADMIN: 'admin',
 };
+
+export const COMMENT_PAGE_SIZE_TOP_LEVEL = 5;
+export const COMMENT_PAGE_SIZE_REPLIES = 5;

@@ -1,6 +1,11 @@
 import { connect } from 'react-redux';
-import { makeSelectStakedLevelForChannelUri, makeSelectClaimForUri, makeSelectThumbnailForUri, selectMyChannelClaims } from 'lbry-redux';
-import { doCommentUpdate } from 'redux/actions/comments';
+import {
+  makeSelectStakedLevelForChannelUri,
+  makeSelectClaimForUri,
+  makeSelectThumbnailForUri,
+  selectMyChannelClaims,
+} from 'lbry-redux';
+import { doCommentUpdate, doCommentList } from 'redux/actions/comments';
 import { makeSelectChannelIsMuted } from 'redux/selectors/blocked';
 import { doToast } from 'redux/actions/notifications';
 import { doSetPlayingUri } from 'redux/actions/content';
@@ -25,6 +30,7 @@ const select = (state, props) => ({
 const perform = (dispatch) => ({
   clearPlayingUri: () => dispatch(doSetPlayingUri({ uri: null })),
   updateComment: (commentId, comment) => dispatch(doCommentUpdate(commentId, comment)),
+  fetchReplies: (uri, parentId, page, pageSize) => dispatch(doCommentList(uri, parentId, page, pageSize)),
   doToast: (options) => dispatch(doToast(options)),
 });
 
