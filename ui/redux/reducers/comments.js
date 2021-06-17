@@ -3,17 +3,23 @@ import * as ACTIONS from 'constants/action_types';
 import { handleActions } from 'util/redux-utils';
 import { BLOCK_LEVEL } from 'constants/comment';
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 const defaultState: CommentsState = {
   commentById: {}, // commentId -> Comment
   byId: {}, // ClaimID -> list of comments
-  repliesByParentId: {}, // ParentCommentID -> list of reply comments
-  topLevelCommentsById: {}, // ClaimID -> list of top level comments
+  totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron
+  repliesByParentId: {}, // ParentCommentID -> list of reply comments (fetched)
+  totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
+  topLevelCommentsById: {}, // ClaimID -> list of top level comments (fetched)
+  totalTopLevelCommentsById: {}, // ClaimID -> total top level comments in commentron
   // TODO:
   // Remove commentsByUri
   // It is not needed and doesn't provide anything but confusion
   commentsByUri: {}, // URI -> claimId
   superChatsByUri: {},
   isLoading: false,
+  isLoadingByParentId: {},
   isCommenting: false,
   myComments: undefined,
   isFetchingReacts: false,
@@ -58,10 +64,13 @@ export default handleActions(
         uri,
         livestream,
       }: { comment: Comment, claimId: string, uri: string, livestream: boolean } = action.data;
+
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
+      const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
       const commentsByUri = Object.assign({}, state.commentsByUri);
       const comments = byId[claimId] || [];
       const newCommentIds = comments.slice();
@@ -75,11 +84,26 @@ export default handleActions(
         newCommentIds.unshift(comment.comment_id);
         byId[claimId] = newCommentIds;
 
+        if (totalCommentsById[claimId]) {
+          totalCommentsById[claimId] += 1;
+        }
+
         if (comment['parent_id']) {
           if (!repliesByParentId[comment.parent_id]) {
             repliesByParentId[comment.parent_id] = [comment.comment_id];
           } else {
             repliesByParentId[comment.parent_id].unshift(comment.comment_id);
+          }
+
+          if (!totalRepliesByParentId[comment.parent_id]) {
+            totalRepliesByParentId[comment.parent_id] = 1;
+          } else {
+            totalRepliesByParentId[comment.parent_id] += 1;
+          }
+
+          // Update the parent's "replies" value
+          if (commentById[comment.parent_id]) {
+            commentById[comment.parent_id].replies = (commentById[comment.parent_id].replies || 0) + 1;
           }
         } else {
           if (!topLevelCommentsById[claimId]) {
@@ -95,8 +119,10 @@ export default handleActions(
         ...state,
         topLevelCommentsById,
         repliesByParentId,
+        totalRepliesByParentId,
         commentById,
         byId,
+        totalCommentsById,
         commentsByUri,
         isLoading: false,
         isCommenting: false,
@@ -174,10 +200,22 @@ export default handleActions(
       };
     },
 
-    [ACTIONS.COMMENT_LIST_STARTED]: (state) => ({ ...state, isLoading: true }),
+    [ACTIONS.COMMENT_LIST_STARTED]: (state, action: any) => {
+      const { parentId } = action.data;
+      const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
+      if (parentId) {
+        isLoadingByParentId[parentId] = true;
+      }
+
+      return {
+        ...state,
+        isLoading: true,
+        isLoadingByParentId,
+      };
+    },
 
     [ACTIONS.COMMENT_LIST_COMPLETED]: (state: CommentsState, action: any) => {
-      const { comments, claimId, uri, disabled, authorClaimId } = action.data;
+      const { comments, parentId, totalItems, claimId, uri, disabled, authorClaimId } = action.data;
       const commentsDisabledChannelIds = [...state.commentsDisabledChannelIds];
 
       if (disabled) {
@@ -185,10 +223,16 @@ export default handleActions(
           commentsDisabledChannelIds.push(authorClaimId);
         }
 
+        const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
+        if (parentId) {
+          isLoadingByParentId[parentId] = false;
+        }
+
         return {
           ...state,
           commentsDisabledChannelIds,
           isLoading: false,
+          isLoadingByParentId,
         };
       } else {
         const index = commentsDisabledChannelIds.indexOf(authorClaimId);
@@ -200,48 +244,91 @@ export default handleActions(
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
+      const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
       const commentsByUri = Object.assign({}, state.commentsByUri);
+      const repliesByParentId = Object.assign({}, state.repliesByParentId);
+      const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
+      const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
 
-      const tempRepliesByParent = {};
-      const topLevelComments = [];
+      const commonUpdateAction = (comment, commentById, commentIds, index) => {
+        // map the comment_ids to the new comments
+        commentById[comment.comment_id] = comment;
+        commentIds[index] = comment.comment_id;
+      };
+
       if (comments) {
         // we use an Array to preserve order of listing
         // in reality this doesn't matter and we can just
         // sort comments by their timestamp
         const commentIds = Array(comments.length);
 
-        // map the comment_ids to the new comments
-        for (let i = 0; i < comments.length; i++) {
-          const comment = comments[i];
-          if (comment['parent_id']) {
-            if (!tempRepliesByParent[comment.parent_id]) {
-              tempRepliesByParent[comment.parent_id] = [comment.comment_id];
-            } else {
-              tempRepliesByParent[comment.parent_id].push(comment.comment_id);
-            }
-          } else {
-            commentById[comment.comment_id] = comment;
-            topLevelComments.push(comment.comment_id);
-          }
-          commentIds[i] = comments[i].comment_id;
-          commentById[commentIds[i]] = comments[i];
-        }
-        topLevelCommentsById[claimId] = topLevelComments;
+        // --- Top-level comments ---
+        if (!parentId) {
+          totalTopLevelCommentsById[claimId] = totalItems;
 
-        byId[claimId] = commentIds;
+          if (!topLevelCommentsById[claimId]) {
+            topLevelCommentsById[claimId] = [];
+          }
+
+          const topLevelCommentsForId = topLevelCommentsById[claimId];
+
+          for (let i = 0; i < comments.length; ++i) {
+            const comment = comments[i];
+            commonUpdateAction(comment, commentById, commentIds, i);
+
+            if (IS_DEV && comment['parent_id']) console.error('Invalid top-level comment:', comment);
+
+            topLevelCommentsForId.push(comment.comment_id);
+          }
+        }
+        // --- Replies ---
+        else {
+          totalRepliesByParentId[parentId] = totalItems;
+          isLoadingByParentId[parentId] = false;
+
+          for (let i = 0; i < comments.length; ++i) {
+            const comment = comments[i];
+            commonUpdateAction(comment, commentById, commentIds, i);
+
+            if (IS_DEV && !comment['parent_id']) console.error('Missing parent_id:', comment);
+            if (IS_DEV && comment.parent_id !== parentId) console.error('Black sheep in the family?:', comment);
+
+            if (!repliesByParentId[parentId]) {
+              repliesByParentId[parentId] = [comment.comment_id];
+            } else if (!repliesByParentId[parentId].includes(comment.comment_id)) {
+              repliesByParentId[parentId].push(comment.comment_id);
+            }
+          }
+        }
+
+        byId[claimId] ? byId[claimId].push(...commentIds) : (byId[claimId] = commentIds);
         commentsByUri[uri] = claimId;
       }
-
-      const repliesByParentId = Object.assign({}, state.repliesByParentId, tempRepliesByParent); // {ParentCommentID -> [commentIds...] } list of reply comments
 
       return {
         ...state,
         topLevelCommentsById,
+        totalTopLevelCommentsById,
         repliesByParentId,
+        totalRepliesByParentId,
         byId,
         commentById,
         commentsByUri,
         commentsDisabledChannelIds,
+        isLoading: false,
+        isLoadingByParentId,
+      };
+    },
+
+    [ACTIONS.COMMENT_COUNT_COMPLETED]: (state: CommentsState, action: any) => {
+      const { claimId, totalItems } = action.data;
+
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
+      totalCommentsById[claimId] = totalItems;
+
+      return {
+        ...state,
+        totalCommentsById,
         isLoading: false,
       };
     },
@@ -272,6 +359,25 @@ export default handleActions(
       ...state,
       isLoading: false,
     }),
+
+    [ACTIONS.COMMENT_LIST_RESET]: (state: CommentsState, action: any) => {
+      const { claimId } = action.data;
+
+      const byId = Object.assign({}, state.byId);
+      const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
+      const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
+
+      delete topLevelCommentsById[claimId];
+      delete byId[claimId];
+      delete totalTopLevelCommentsById[claimId];
+
+      return {
+        ...state,
+        byId,
+        topLevelCommentsById,
+        totalTopLevelCommentsById,
+      };
+    },
 
     [ACTIONS.COMMENT_RECEIVED]: (state: CommentsState, action: any) => {
       const { uri, claimId, comment } = action.data;
@@ -352,21 +458,50 @@ export default handleActions(
       const { comment_id } = action.data;
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
+      const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
+      const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
+
+      const comment = commentById[comment_id];
 
       // to remove the comment and its references
-      const claimId = commentById[comment_id].claim_id;
+      const claimId = comment.claim_id;
       for (let i = 0; i < byId[claimId].length; i++) {
         if (byId[claimId][i] === comment_id) {
           byId[claimId].splice(i, 1);
           break;
         }
       }
+
+      // Update replies
+      if (comment['parent_id'] && repliesByParentId[comment.parent_id]) {
+        const index = repliesByParentId[comment.parent_id].indexOf(comment.comment_id);
+        if (index > -1) {
+          repliesByParentId[comment.parent_id].splice(index, 1);
+
+          if (commentById[comment.parent_id]) {
+            commentById[comment.parent_id].replies = Math.max(0, (commentById[comment.parent_id].replies || 0) - 1);
+          }
+
+          if (totalRepliesByParentId[comment.parent_id]) {
+            totalRepliesByParentId[comment.parent_id] = Math.max(0, totalRepliesByParentId[comment.parent_id] - 1);
+          }
+        }
+      }
+
+      if (totalCommentsById[claimId]) {
+        totalCommentsById[claimId] = Math.max(0, totalCommentsById[claimId] - 1);
+      }
+
       delete commentById[comment_id];
 
       return {
         ...state,
         commentById,
         byId,
+        totalCommentsById,
+        repliesByParentId,
+        totalRepliesByParentId,
         isLoading: false,
       };
     },

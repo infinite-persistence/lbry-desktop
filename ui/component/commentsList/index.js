@@ -4,18 +4,20 @@ import {
   makeSelectTopLevelCommentsForUri,
   selectIsFetchingComments,
   makeSelectTotalCommentsCountForUri,
+  makeSelectTotalTopLevelCommentsForUri,
   selectOthersReactsById,
   makeSelectCommentsDisabledForUri,
 } from 'redux/selectors/comments';
-import { doCommentList, doCommentReactList } from 'redux/actions/comments';
+import { doCommentReset, doCommentList, doCommentReactList } from 'redux/actions/comments';
 import { selectUserVerifiedEmail } from 'redux/selectors/user';
 import { selectActiveChannelId } from 'redux/selectors/app';
 import CommentsList from './view';
 
 const select = (state, props) => ({
   myChannels: selectMyChannelClaims(state),
-  comments: makeSelectTopLevelCommentsForUri(props.uri)(state),
+  topLevelComments: makeSelectTopLevelCommentsForUri(props.uri)(state),
   totalComments: makeSelectTotalCommentsCountForUri(props.uri)(state),
+  totalTopLevelComments: makeSelectTotalTopLevelCommentsForUri(props.uri)(state),
   claimIsMine: makeSelectClaimIsMine(props.uri)(state),
   isFetchingComments: selectIsFetchingComments(state),
   commentingEnabled: IS_WEB ? Boolean(selectUserVerifiedEmail(state)) : true,
@@ -26,7 +28,8 @@ const select = (state, props) => ({
 });
 
 const perform = (dispatch) => ({
-  fetchComments: (uri) => dispatch(doCommentList(uri)),
+  resetComments: (uri) => dispatch(doCommentReset(uri)),
+  fetchTopLevelComments: (uri, page, pageSize) => dispatch(doCommentList(uri, '', page, pageSize)),
   fetchReacts: (uri) => dispatch(doCommentReactList(uri)),
 });
 
