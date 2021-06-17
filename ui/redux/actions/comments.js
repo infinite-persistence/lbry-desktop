@@ -18,7 +18,7 @@ import { selectActiveChannelClaim } from 'redux/selectors/app';
 import { toHex } from 'util/hex';
 import Comments from 'comments';
 
-export function doCommentList(uri: string, page: number = 1, pageSize: number = 99999) {
+export function doCommentList(uri: string, parentId: string, page: number = 1, pageSize: number = 99999) {
   return (dispatch: Dispatch, getState: GetState) => {
     const state = getState();
     const claim = selectClaimsByUri(state)[uri];
@@ -35,24 +35,53 @@ export function doCommentList(uri: string, page: number = 1, pageSize: number = 
 
     dispatch({
       type: ACTIONS.COMMENT_LIST_STARTED,
+      data: {
+        parentId,
+      },
     });
 
     // Adding 'channel_id' and 'channel_name' enables "CreatorSettings > commentsEnabled".
     const authorChannelClaim = claim.value_type === 'channel' ? claim : claim.signing_channel;
 
+    if (!parentId && page === 1) {
+      // If top-level, do an extra dummy request without 'top_level' just to get
+      // the full number of comments (including replies) in Commentron.
+      Comments.comment_list({
+        page: 1,
+        page_size: 1,
+        claim_id: claimId,
+        channel_id: authorChannelClaim ? authorChannelClaim.claim_id : undefined,
+        channel_name: authorChannelClaim ? authorChannelClaim.name : undefined,
+      }).then((result: CommentListResponse) => {
+        const { total_items } = result;
+        dispatch({
+          type: ACTIONS.COMMENT_COUNT_COMPLETED,
+          data: {
+            claimId: claimId,
+            totalItems: total_items,
+          },
+        });
+        return result;
+      });
+    }
+
     return Comments.comment_list({
       page,
       claim_id: claimId,
       page_size: pageSize,
+      parent_id: parentId || undefined,
+      top_level: !parentId,
       channel_id: authorChannelClaim ? authorChannelClaim.claim_id : undefined,
       channel_name: authorChannelClaim ? authorChannelClaim.name : undefined,
     })
       .then((result: CommentListResponse) => {
-        const { items: comments } = result;
+        const { items: comments, total_items } = result;
         dispatch({
           type: ACTIONS.COMMENT_LIST_COMPLETED,
           data: {
             comments,
+            parentId,
+            totalItems: total_items,
             claimId: claimId,
             authorClaimId: authorChannelClaim ? authorChannelClaim.claim_id : undefined,
             uri: uri,
@@ -76,6 +105,29 @@ export function doCommentList(uri: string, page: number = 1, pageSize: number = 
           });
         }
       });
+  };
+}
+
+export function doCommentReset(uri: string) {
+  return (dispatch: Dispatch, getState: GetState) => {
+    const state = getState();
+    const claim = selectClaimsByUri(state)[uri];
+    const claimId = claim ? claim.claim_id : null;
+
+    if (!claimId) {
+      dispatch({
+        type: ACTIONS.COMMENT_LIST_FAILED,
+        data: 'unable to find claim for uri',
+      });
+      return;
+    }
+
+    dispatch({
+      type: ACTIONS.COMMENT_LIST_RESET,
+      data: {
+        claimId,
+      },
+    });
   };
 }
 

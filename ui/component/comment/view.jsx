@@ -1,6 +1,7 @@
 // @flow
 import * as ICONS from 'constants/icons';
 import * as PAGES from 'constants/pages';
+import { COMMENT_PAGE_SIZE_REPLIES } from 'constants/comment';
 import { FF_MAX_CHARS_IN_COMMENT } from 'constants/form-field';
 import { SITE_NAME, SIMPLE_SITE, ENABLE_COMMENT_REACTIONS } from 'config';
 import React, { useEffect, useState } from 'react';
@@ -36,6 +37,7 @@ type Props = {
   claimIsMine: boolean, // if you control the claim which this comment was posted on
   commentIsMine: boolean, // if this comment was signed by an owned channel
   updateComment: (string, string) => void,
+  fetchReplies: (string, string, number, number) => void,
   commentModBlock: (string) => void,
   linkedComment?: any,
   myChannels: ?Array<ChannelClaim>,
@@ -53,6 +55,7 @@ type Props = {
   playingUri: ?PlayingUri,
   stakedLevel: number,
   supportAmount: number,
+  numDirectReplies: number,
 };
 
 const LENGTH_TO_COLLAPSE = 300;
@@ -71,6 +74,7 @@ function Comment(props: Props) {
     commentIsMine,
     commentId,
     updateComment,
+    fetchReplies,
     linkedComment,
     commentingEnabled,
     myChannels,
@@ -82,6 +86,7 @@ function Comment(props: Props) {
     playingUri,
     stakedLevel,
     supportAmount,
+    numDirectReplies,
   } = props;
   const {
     push,
@@ -94,6 +99,9 @@ function Comment(props: Props) {
   const [charCount, setCharCount] = useState(editedMessage.length);
   // used for controlling the visibility of the menu icon
   const [mouseIsHovering, setMouseHover] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
+  const [justRepliedCount, setJustRepliedCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [advancedEditor] = usePersistedState('comment-editor-mode', false);
   const [displayDeadComment, setDisplayDeadComment] = React.useState(false);
   const hasChannels = myChannels && myChannels.length > 0;
@@ -130,6 +138,12 @@ function Comment(props: Props) {
       };
     }
   }, [author, authorUri, editedMessage, isEditing, setEditing]);
+
+  useEffect(() => {
+    if (page > 0) {
+      fetchReplies(uri, commentId, page, COMMENT_PAGE_SIZE_REPLIES);
+    }
+  }, [page, uri, commentId, fetchReplies]);
 
   function handleEditMessageChanged(event) {
     setCommentValue(!SIMPLE_SITE && advancedEditor ? event : event.target.value);
@@ -302,13 +316,50 @@ function Comment(props: Props) {
                   {ENABLE_COMMENT_REACTIONS && <CommentReactions uri={uri} commentId={commentId} />}
                 </div>
 
+                {numDirectReplies > 0 && numDirectReplies !== justRepliedCount && !showReplies && (
+                  <div className="comment__actions">
+                    <Button
+                      label={
+                        numDirectReplies < 2
+                          ? __('Show reply')
+                          : __('Show %count% replies', { count: numDirectReplies - justRepliedCount })
+                      }
+                      button="link"
+                      onClick={() => {
+                        setShowReplies(true);
+                        if (page === 0) {
+                          setPage(1);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {numDirectReplies > 0 && showReplies && (
+                  <div className="comment__actions">
+                    <Button
+                      label={__('Hide replies')}
+                      button="link"
+                      onClick={() => {
+                        setJustRepliedCount(0);
+                        setShowReplies(false);
+                      }}
+                    />
+                  </div>
+                )}
+
                 {isReplying && (
                   <CommentCreate
                     isReply
                     uri={uri}
                     parentId={commentId}
-                    onDoneReplying={() => setReplying(false)}
-                    onCancelReplying={() => setReplying(false)}
+                    onDoneReplying={() => {
+                      setJustRepliedCount(justRepliedCount + 1);
+                      setReplying(false);
+                    }}
+                    onCancelReplying={() => {
+                      setReplying(false);
+                    }}
                   />
                 )}
               </>
@@ -317,7 +368,16 @@ function Comment(props: Props) {
         </div>
       </div>
 
-      <CommentsReplies threadDepth={threadDepth - 1} uri={uri} parentId={commentId} linkedComment={linkedComment} />
+      {(showReplies || justRepliedCount > 0) && (
+        <CommentsReplies
+          threadDepth={threadDepth - 1}
+          uri={uri}
+          parentId={commentId}
+          linkedComment={linkedComment}
+          numDirectReplies={numDirectReplies}
+          onShowMore={() => setPage(page + 1)}
+        />
+      )}
     </li>
   );
 }
