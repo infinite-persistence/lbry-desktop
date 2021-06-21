@@ -16,6 +16,7 @@ import FileDownloadLink from 'component/fileDownloadLink';
 import ClaimRepostAuthor from 'component/claimRepostAuthor';
 import ClaimMenuList from 'component/claimMenuList';
 import CollectionPreviewOverlay from 'component/collectionPreviewOverlay';
+import TilePlaceholder from './tilePlaceholder.png';
 
 type Props = {
   uri: string,
@@ -36,7 +37,6 @@ type Props = {
   }>,
   blockedChannelUris: Array<string>,
   getFile: (string) => void,
-  placeholder: boolean,
   streamingUrl: string,
   isMature: boolean,
   showMature: boolean,
@@ -156,7 +156,9 @@ function ClaimPreviewTile(props: Props) {
   if (placeholder || (!claim && isResolvingUri)) {
     return (
       <li className={classnames('claim-preview--tile', {})}>
-        <div className="placeholder media__thumb" />
+        <div className="placeholder media__thumb">
+          <img src={TilePlaceholder} alt="Preview tile loading" />
+        </div>
         <div className="placeholder__wrapper">
           <div className="placeholder claim-tile__title" />
           <div className="placeholder claim-tile__info" />
