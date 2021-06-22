@@ -29,8 +29,9 @@ declare type CommentsState = {
   commentsByUri: { [string]: string },
   superChatsByUri: { [string]: { totalAmount: number, comments: Array<Comment> } },
   byId: { [string]: Array<string> },
-  repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of reply comments
-  topLevelCommentsById: { [string]: Array<string> }, // ClaimID -> list of top level comments
+  repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of reply comments (fetched)
+  totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
+  topLevelCommentsById: { [string]: Array<string> }, // ClaimID -> list of top level comments (fetched)
   totalTopLevelCommentsById: { [string]: number }, // ClaimID -> total top level comments in commentron
   commentById: { [string]: Comment },
   isLoading: boolean,

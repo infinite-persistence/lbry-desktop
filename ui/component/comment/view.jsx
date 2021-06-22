@@ -1,6 +1,7 @@
 // @flow
 import * as ICONS from 'constants/icons';
 import * as PAGES from 'constants/pages';
+import { COMMENT_PAGE_SIZE_REPLIES } from 'constants/comment';
 import { FF_MAX_CHARS_IN_COMMENT } from 'constants/form-field';
 import { SITE_NAME, SIMPLE_SITE, ENABLE_COMMENT_REACTIONS } from 'config';
 import React, { useEffect, useState } from 'react';
@@ -318,7 +319,7 @@ function Comment(props: Props) {
                       button="link"
                       onClick={() => {
                         setShowReplies(true);
-                        fetchReplies(uri, commentId, 1, 99999);
+                        fetchReplies(uri, commentId, 1, COMMENT_PAGE_SIZE_REPLIES);
                       }}
                     />
                   </div>

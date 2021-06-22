@@ -5,7 +5,7 @@ import {
   SORT_COMMENTS_NEW,
   SORT_COMMENTS_BEST,
   SORT_COMMENTS_CONTROVERSIAL,
-  COMMENT_LIST_PAGE_SIZE,
+  COMMENT_PAGE_SIZE_TOP_LEVEL,
 } from 'constants/comment';
 import React, { useEffect } from 'react';
 import classnames from 'classnames';
@@ -99,7 +99,7 @@ function CommentList(props: Props) {
     if (page === 1) {
       resetComments(uri);
     }
-    fetchTopLevelComments(uri, page, COMMENT_LIST_PAGE_SIZE);
+    fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL);
   }, [fetchTopLevelComments, uri, page]);
 
   useEffect(() => {

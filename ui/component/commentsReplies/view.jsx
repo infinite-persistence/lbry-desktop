@@ -1,5 +1,6 @@
 // @flow
 import * as ICONS from 'constants/icons';
+import { COMMENT_PAGE_SIZE_REPLIES } from 'constants/comment';
 import React from 'react';
 import Comment from 'component/comment';
 import Button from 'component/button';
@@ -18,7 +19,7 @@ function CommentsReplies(props: Props) {
   const { uri, comments, claimIsMine, myChannels, linkedComment, commentingEnabled, threadDepth } = props;
   const [isExpanded, setExpanded] = React.useState(true);
   const [start, setStart] = React.useState(0);
-  const [end, setEnd] = React.useState(9);
+  const [end, setEnd] = React.useState(COMMENT_PAGE_SIZE_REPLIES);
   const sortedComments = comments ? [...comments].reverse() : [];
   const numberOfComments = comments ? comments.length : 0;
   const linkedCommentId = linkedComment ? linkedComment.comment_id : '';

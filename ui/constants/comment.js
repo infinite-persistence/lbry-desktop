@@ -10,4 +10,5 @@ export const BLOCK_LEVEL = {
   ADMIN: 'admin',
 };
 
-export const COMMENT_LIST_PAGE_SIZE = 5;
+export const COMMENT_PAGE_SIZE_TOP_LEVEL = 5;
+export const COMMENT_PAGE_SIZE_REPLIES = 5;

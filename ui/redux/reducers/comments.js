@@ -8,8 +8,9 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 const defaultState: CommentsState = {
   commentById: {}, // commentId -> Comment
   byId: {}, // ClaimID -> list of comments
-  repliesByParentId: {}, // ParentCommentID -> list of reply comments
-  topLevelCommentsById: {}, // ClaimID -> list of top level comments
+  repliesByParentId: {}, // ParentCommentID -> list of reply comments (fetched)
+  totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
+  topLevelCommentsById: {}, // ClaimID -> list of top level comments (fetched)
   totalTopLevelCommentsById: {}, // ClaimID -> total top level comments in commentron
   // TODO:
   // Remove commentsByUri
@@ -186,7 +187,7 @@ export default handleActions(
     [ACTIONS.COMMENT_LIST_STARTED]: (state) => ({ ...state, isLoading: true }),
 
     [ACTIONS.COMMENT_LIST_COMPLETED]: (state: CommentsState, action: any) => {
-      const { comments, topLevel, totalItems, claimId, uri, disabled, authorClaimId } = action.data;
+      const { comments, parentId, totalItems, claimId, uri, disabled, authorClaimId } = action.data;
       const commentsDisabledChannelIds = [...state.commentsDisabledChannelIds];
 
       if (disabled) {
@@ -212,6 +213,13 @@ export default handleActions(
       const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
       const commentsByUri = Object.assign({}, state.commentsByUri);
       const repliesByParentId = Object.assign({}, state.repliesByParentId);
+      const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
+
+      const commonUpdateAction = (comment, commentById, commentIds, index) => {
+        // map the comment_ids to the new comments
+        commentById[comment.comment_id] = comment;
+        commentIds[index] = comment.comment_id;
+      };
 
       if (comments) {
         // we use an Array to preserve order of listing
@@ -219,8 +227,8 @@ export default handleActions(
         // sort comments by their timestamp
         const commentIds = Array(comments.length);
 
-        // map the comment_ids to the new comments
-        if (topLevel) {
+        // --- Top-level comments ---
+        if (!parentId) {
           totalTopLevelCommentsById[claimId] = totalItems;
 
           if (!topLevelCommentsById[claimId]) {
@@ -231,25 +239,28 @@ export default handleActions(
 
           for (let i = 0; i < comments.length; ++i) {
             const comment = comments[i];
-            commentById[comment.comment_id] = comment;
-            commentIds[i] = comment.comment_id;
+            commonUpdateAction(comment, commentById, commentIds, i);
 
             if (IS_DEV && comment['parent_id']) console.error('Invalid top-level comment:', comment);
 
             topLevelCommentsForId.push(comment.comment_id);
           }
-        } else {
+        }
+        // --- Replies ---
+        else {
+          totalRepliesByParentId[parentId] = totalItems;
+
           for (let i = 0; i < comments.length; ++i) {
             const comment = comments[i];
-            commentById[comment.comment_id] = comment;
-            commentIds[i] = comment.comment_id;
+            commonUpdateAction(comment, commentById, commentIds, i);
 
             if (IS_DEV && !comment['parent_id']) console.error('Missing parent_id:', comment);
+            if (IS_DEV && comment.parent_id !== parentId) console.error('Black sheep in the family?:', comment);
 
-            if (!repliesByParentId[comment.parent_id]) {
-              repliesByParentId[comment.parent_id] = [comment.comment_id];
-            } else if (!repliesByParentId[comment.parent_id].includes(comment.comment_id)) {
-              repliesByParentId[comment.parent_id].push(comment.comment_id);
+            if (!repliesByParentId[parentId]) {
+              repliesByParentId[parentId] = [comment.comment_id];
+            } else if (!repliesByParentId[parentId].includes(comment.comment_id)) {
+              repliesByParentId[parentId].push(comment.comment_id);
             }
           }
         }
