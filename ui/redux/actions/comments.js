@@ -55,7 +55,7 @@ export function doCommentList(uri: string, parentId: string, page: number = 1, p
           type: ACTIONS.COMMENT_LIST_COMPLETED,
           data: {
             comments,
-            topLevel: !parentId,
+            parentId,
             totalItems: total_items,
             claimId: claimId,
             authorClaimId: authorChannelClaim ? authorChannelClaim.claim_id : undefined,
