@@ -67,6 +67,7 @@ export default handleActions(
       const byId = Object.assign({}, state.byId);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
+      const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
       const commentsByUri = Object.assign({}, state.commentsByUri);
       const comments = byId[claimId] || [];
       const newCommentIds = comments.slice();
@@ -87,6 +88,12 @@ export default handleActions(
             repliesByParentId[comment.parent_id].unshift(comment.comment_id);
           }
 
+          if (!totalRepliesByParentId[comment.parent_id]) {
+            totalRepliesByParentId[comment.parent_id] = 1;
+          } else {
+            totalRepliesByParentId[comment.parent_id] += 1;
+          }
+
           // Update the parent's "replies" value
           if (commentById[comment.parent_id]) {
             commentById[comment.parent_id].replies = repliesByParentId[comment.parent_id].length;
@@ -105,6 +112,7 @@ export default handleActions(
         ...state,
         topLevelCommentsById,
         repliesByParentId,
+        totalRepliesByParentId,
         commentById,
         byId,
         commentsByUri,
@@ -274,6 +282,7 @@ export default handleActions(
         topLevelCommentsById,
         totalTopLevelCommentsById,
         repliesByParentId,
+        totalRepliesByParentId,
         byId,
         commentById,
         commentsByUri,
@@ -408,6 +417,7 @@ export default handleActions(
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
       const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
+      const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
 
       const comment = commentById[comment_id];
 
@@ -429,6 +439,10 @@ export default handleActions(
           if (commentById[comment.parent_id]) {
             commentById[comment.parent_id].replies = repliesByParentId[comment.parent_id].length;
           }
+
+          if (totalRepliesByParentId[comment.parent_id]) {
+            totalRepliesByParentId[comment.parent_id] = Math.max(0, totalRepliesByParentId[comment.parent_id] - 1);
+          }
         }
       }
 
@@ -438,6 +452,8 @@ export default handleActions(
         ...state,
         commentById,
         byId,
+        repliesByParentId,
+        totalRepliesByParentId,
         isLoading: false,
       };
     },
