@@ -21,9 +21,9 @@ import Empty from 'component/common/empty';
 type Props = {
   topLevelComments: Array<Comment>,
   commentsDisabledBySettings: boolean,
-  resetComments: (string) => void,
   fetchTopLevelComments: (string, number, number) => void,
   fetchReacts: (string) => Promise<any>,
+  resetComments: (string) => void,
   uri: string,
   claimIsMine: boolean,
   myChannels: ?Array<ChannelClaim>,
@@ -38,9 +38,9 @@ type Props = {
 
 function CommentList(props: Props) {
   const {
-    resetComments,
     fetchTopLevelComments,
     fetchReacts,
+    resetComments,
     uri,
     topLevelComments,
     commentsDisabledBySettings,
@@ -60,9 +60,6 @@ function CommentList(props: Props) {
     'comment-sort',
     ENABLE_COMMENT_REACTIONS ? SORT_COMMENTS_BEST : SORT_COMMENTS_NEW
   );
-
-  // const [start] = React.useState(0);
-  // const [end, setEnd] = React.useState(1);
 
   const [page, setPage] = React.useState(1);
 
@@ -86,12 +83,6 @@ function CommentList(props: Props) {
     }
     return false;
   };
-
-  // const handleMoreBelow = React.useCallback(() => {
-  //   if (moreBelow) {
-  //     setEnd(end + 10);
-  //   }
-  // }, [end, setEnd, moreBelow]);
 
   // Fetch top-level comments
   useEffect(() => {
@@ -132,7 +123,6 @@ function CommentList(props: Props) {
         rect.left <= (window.innerWidth || document.documentElement.clientWidth);
 
       if (isInViewport) {
-        // handleMoreBelow();
         if (topLevelComments.length < totalTopLevelComments) {
           setPage(page + 1);
         }

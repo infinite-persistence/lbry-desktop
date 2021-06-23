@@ -28,9 +28,9 @@ const select = (state, props) => ({
 });
 
 const perform = (dispatch) => ({
-  resetComments: (uri) => dispatch(doCommentReset(uri)),
   fetchTopLevelComments: (uri, page, pageSize) => dispatch(doCommentList(uri, '', page, pageSize)),
   fetchReacts: (uri) => dispatch(doCommentReactList(uri)),
+  resetComments: (uri) => dispatch(doCommentReset(uri)),
 });
 
 export default connect(select, perform)(CommentsList);
