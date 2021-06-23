@@ -64,15 +64,6 @@ function CommentsReplies(props: Props) {
     return false;
   }
 
-  function handleCommentDone() {
-    throw new Error('Is this used?');
-    // if (!isExpanded) {
-    //   setExpanded(true);
-    //   setStart(numDirectReplies || 0);
-    // }
-    // setEnd(numDirectReplies + 1);
-  }
-
   // React.useEffect(() => {
   //   if (
   //     setStart &&
@@ -127,7 +118,6 @@ function CommentsReplies(props: Props) {
                       commentIsMine={comment.channel_id && isMyComment(comment.channel_id)}
                       linkedComment={linkedComment}
                       commentingEnabled={commentingEnabled}
-                      handleCommentDone={handleCommentDone}
                       supportAmount={comment.support_amount}
                       numDirectReplies={comment.replies}
                     />
