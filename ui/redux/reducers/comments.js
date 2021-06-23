@@ -8,6 +8,7 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 const defaultState: CommentsState = {
   commentById: {}, // commentId -> Comment
   byId: {}, // ClaimID -> list of comments
+  totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron
   repliesByParentId: {}, // ParentCommentID -> list of reply comments (fetched)
   totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
   topLevelCommentsById: {}, // ClaimID -> list of top level comments (fetched)
@@ -193,6 +194,19 @@ export default handleActions(
     },
 
     [ACTIONS.COMMENT_LIST_STARTED]: (state) => ({ ...state, isLoading: true }),
+
+    [ACTIONS.COMMENT_COUNT_COMPLETED]: (state: CommentsState, action: any) => {
+      const { claimId, totalItems } = action.data;
+
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
+      totalCommentsById[claimId] = totalItems;
+
+      return {
+        ...state,
+        totalCommentsById,
+        isLoading: false,
+      };
+    },
 
     [ACTIONS.COMMENT_LIST_COMPLETED]: (state: CommentsState, action: any) => {
       const { comments, parentId, totalItems, claimId, uri, disabled, authorClaimId } = action.data;

@@ -341,8 +341,9 @@ export const makeSelectRepliesForParentId = (id: string) =>
   );
 
 export const makeSelectTotalCommentsCountForUri = (uri: string) =>
-  createSelector(makeSelectCommentsForUri(uri), (comments) => {
-    return comments ? comments.length : 0;
+  createSelector(selectState, selectCommentsByUri, (state, byUri) => {
+    const claimId = byUri[uri];
+    return state.totalCommentsById[claimId] || 0;
   });
 
 // Personal list
