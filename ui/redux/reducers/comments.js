@@ -19,6 +19,7 @@ const defaultState: CommentsState = {
   commentsByUri: {}, // URI -> claimId
   superChatsByUri: {},
   isLoading: false,
+  isLoadingByParentId: {},
   isCommenting: false,
   myComments: undefined,
   isFetchingReacts: false,
@@ -66,6 +67,7 @@ export default handleActions(
 
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
       const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
@@ -81,6 +83,10 @@ export default handleActions(
         // push the comment_id to the top of ID list
         newCommentIds.unshift(comment.comment_id);
         byId[claimId] = newCommentIds;
+
+        if (totalCommentsById[claimId]) {
+          totalCommentsById[claimId] += 1;
+        }
 
         if (comment['parent_id']) {
           if (!repliesByParentId[comment.parent_id]) {
@@ -116,6 +122,7 @@ export default handleActions(
         totalRepliesByParentId,
         commentById,
         byId,
+        totalCommentsById,
         commentsByUri,
         isLoading: false,
         isCommenting: false,
@@ -193,18 +200,17 @@ export default handleActions(
       };
     },
 
-    [ACTIONS.COMMENT_LIST_STARTED]: (state) => ({ ...state, isLoading: true }),
-
-    [ACTIONS.COMMENT_COUNT_COMPLETED]: (state: CommentsState, action: any) => {
-      const { claimId, totalItems } = action.data;
-
-      const totalCommentsById = Object.assign({}, state.totalCommentsById);
-      totalCommentsById[claimId] = totalItems;
+    [ACTIONS.COMMENT_LIST_STARTED]: (state, action: any) => {
+      const { parentId } = action.data;
+      const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
+      if (parentId) {
+        isLoadingByParentId[parentId] = true;
+      }
 
       return {
         ...state,
-        totalCommentsById,
-        isLoading: false,
+        isLoading: true,
+        isLoadingByParentId,
       };
     },
 
@@ -217,10 +223,16 @@ export default handleActions(
           commentsDisabledChannelIds.push(authorClaimId);
         }
 
+        const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
+        if (parentId) {
+          isLoadingByParentId[parentId] = false;
+        }
+
         return {
           ...state,
           commentsDisabledChannelIds,
           isLoading: false,
+          isLoadingByParentId,
         };
       } else {
         const index = commentsDisabledChannelIds.indexOf(authorClaimId);
@@ -236,6 +248,7 @@ export default handleActions(
       const commentsByUri = Object.assign({}, state.commentsByUri);
       const repliesByParentId = Object.assign({}, state.repliesByParentId);
       const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
+      const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
 
       const commonUpdateAction = (comment, commentById, commentIds, index) => {
         // map the comment_ids to the new comments
@@ -271,6 +284,7 @@ export default handleActions(
         // --- Replies ---
         else {
           totalRepliesByParentId[parentId] = totalItems;
+          isLoadingByParentId[parentId] = false;
 
           for (let i = 0; i < comments.length; ++i) {
             const comment = comments[i];
@@ -301,6 +315,20 @@ export default handleActions(
         commentById,
         commentsByUri,
         commentsDisabledChannelIds,
+        isLoading: false,
+        isLoadingByParentId,
+      };
+    },
+
+    [ACTIONS.COMMENT_COUNT_COMPLETED]: (state: CommentsState, action: any) => {
+      const { claimId, totalItems } = action.data;
+
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
+      totalCommentsById[claimId] = totalItems;
+
+      return {
+        ...state,
+        totalCommentsById,
         isLoading: false,
       };
     },
@@ -432,6 +460,7 @@ export default handleActions(
       const byId = Object.assign({}, state.byId);
       const repliesByParentId = Object.assign({}, state.repliesByParentId); // {ParentCommentID -> [commentIds...] } list of reply comments
       const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
 
       const comment = commentById[comment_id];
 
@@ -460,12 +489,17 @@ export default handleActions(
         }
       }
 
+      if (totalCommentsById[claimId]) {
+        totalCommentsById[claimId] = Math.max(0, totalCommentsById[claimId] - 1);
+      }
+
       delete commentById[comment_id];
 
       return {
         ...state,
         commentById,
         byId,
+        totalCommentsById,
         repliesByParentId,
         totalRepliesByParentId,
         isLoading: false,

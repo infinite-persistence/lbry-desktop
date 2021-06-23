@@ -35,6 +35,9 @@ export function doCommentList(uri: string, parentId: string, page: number = 1, p
 
     dispatch({
       type: ACTIONS.COMMENT_LIST_STARTED,
+      data: {
+        parentId,
+      },
     });
 
     // Adding 'channel_id' and 'channel_name' enables "CreatorSettings > commentsEnabled".

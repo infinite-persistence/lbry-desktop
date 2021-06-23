@@ -36,6 +36,7 @@ declare type CommentsState = {
   totalTopLevelCommentsById: { [string]: number }, // ClaimID -> total top level comments in commentron
   commentById: { [string]: Comment },
   isLoading: boolean,
+  isLoadingByParentId: { [string]: boolean },
   myComments: ?Set<string>,
   isFetchingReacts: boolean,
   myReactsByCommentId: any,

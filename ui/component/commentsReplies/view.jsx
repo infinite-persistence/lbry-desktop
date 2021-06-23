@@ -4,19 +4,32 @@ import { COMMENT_PAGE_SIZE_REPLIES } from 'constants/comment';
 import React from 'react';
 import Comment from 'component/comment';
 import Button from 'component/button';
+import Spinner from 'component/spinner';
 
 type Props = {
   comments: Array<any>,
   uri: string,
+  parentId: string,
   claimIsMine: boolean,
   myChannels: ?Array<ChannelClaim>,
   linkedComment?: Comment,
   commentingEnabled: boolean,
   threadDepth: number,
+  isFetchingByParentId: { [string]: boolean },
 };
 
 function CommentsReplies(props: Props) {
-  const { uri, comments, claimIsMine, myChannels, linkedComment, commentingEnabled, threadDepth } = props;
+  const {
+    uri,
+    parentId,
+    comments,
+    claimIsMine,
+    myChannels,
+    linkedComment,
+    commentingEnabled,
+    threadDepth,
+    isFetchingByParentId,
+  } = props;
   const [isExpanded, setExpanded] = React.useState(true);
   const [start, setStart] = React.useState(0);
   const [end, setEnd] = React.useState(COMMENT_PAGE_SIZE_REPLIES);
@@ -69,6 +82,16 @@ function CommentsReplies(props: Props) {
   }, [setStart, setEnd, setExpanded, linkedCommentId, commentsIndexOfLInked]);
 
   const displayedComments = sortedComments.slice(start, end);
+
+  if (isExpanded && isFetchingByParentId[parentId]) {
+    return (
+      <div className="comment__replies-container">
+        <div className="comment__actions--nested">
+          <Spinner type="small" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     Boolean(numberOfComments) && (
