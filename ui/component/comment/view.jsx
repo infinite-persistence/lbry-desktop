@@ -101,6 +101,7 @@ function Comment(props: Props) {
   const [mouseIsHovering, setMouseHover] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [justRepliedCount, setJustRepliedCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [advancedEditor] = usePersistedState('comment-editor-mode', false);
   const [displayDeadComment, setDisplayDeadComment] = React.useState(false);
   const hasChannels = myChannels && myChannels.length > 0;
@@ -137,6 +138,12 @@ function Comment(props: Props) {
       };
     }
   }, [author, authorUri, editedMessage, isEditing, setEditing]);
+
+  useEffect(() => {
+    if (page > 0) {
+      fetchReplies(uri, commentId, page, COMMENT_PAGE_SIZE_REPLIES);
+    }
+  }, [page, uri, commentId, fetchReplies]);
 
   function handleEditMessageChanged(event) {
     setCommentValue(!SIMPLE_SITE && advancedEditor ? event : event.target.value);
@@ -320,7 +327,9 @@ function Comment(props: Props) {
                       button="link"
                       onClick={() => {
                         setShowReplies(true);
-                        fetchReplies(uri, commentId, 1, COMMENT_PAGE_SIZE_REPLIES);
+                        if (page === 0) {
+                          setPage(1);
+                        }
                       }}
                     />
                   </div>
@@ -360,7 +369,14 @@ function Comment(props: Props) {
       </div>
 
       {(showReplies || justRepliedCount > 0) && (
-        <CommentsReplies threadDepth={threadDepth - 1} uri={uri} parentId={commentId} linkedComment={linkedComment} />
+        <CommentsReplies
+          threadDepth={threadDepth - 1}
+          uri={uri}
+          parentId={commentId}
+          linkedComment={linkedComment}
+          numDirectReplies={numDirectReplies}
+          onShowMore={() => setPage(page + 1)}
+        />
       )}
     </li>
   );
