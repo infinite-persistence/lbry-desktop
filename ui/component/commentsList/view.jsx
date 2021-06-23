@@ -95,7 +95,6 @@ function CommentList(props: Props) {
 
   // Fetch top-level comments
   useEffect(() => {
-    console.log('fetchTopLevelComments: page:', page);
     if (page === 1) {
       resetComments(uri);
     }
@@ -120,7 +119,7 @@ function CommentList(props: Props) {
   }, [readyToDisplayComments, linkedCommentId]);
 
   useEffect(() => {
-    function handleCommentScroll(e) {
+    function handleCommentScroll() {
       // $FlowFixMe
       const rect = spinnerRef.current.getBoundingClientRect();
 
@@ -135,7 +134,6 @@ function CommentList(props: Props) {
       if (isInViewport) {
         // handleMoreBelow();
         if (topLevelComments.length < totalTopLevelComments) {
-          console.log('setPage():', page, '-->', page + 1);
           setPage(page + 1);
         }
       }
@@ -146,10 +144,18 @@ function CommentList(props: Props) {
     }
 
     return () => window.removeEventListener('scroll', handleCommentScroll);
-  }, [moreBelow, /* handleMoreBelow, */ spinnerRef, isFetchingComments, readyToDisplayComments]);
+  }, [
+    page,
+    moreBelow,
+    spinnerRef,
+    isFetchingComments,
+    readyToDisplayComments,
+    topLevelComments.length,
+    totalTopLevelComments,
+  ]);
 
-  function prepareComments(arrayOfComments, linkedComment, isFetchingComments) {
-    let orderedComments = [];
+  function prepareComments(arrayOfComments, linkedComment /* , isFetchingComments */) {
+    let orderedComments;
 
     if (linkedComment) {
       if (!linkedComment.parent_id) {
