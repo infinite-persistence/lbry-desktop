@@ -100,7 +100,7 @@ function CommentList(props: Props) {
       resetComments(uri);
     }
     fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL);
-  }, [fetchTopLevelComments, uri, page]);
+  }, [fetchTopLevelComments, uri, page, resetComments]);
 
   useEffect(() => {
     if (totalComments && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
@@ -125,12 +125,12 @@ function CommentList(props: Props) {
       const rect = spinnerRef.current.getBoundingClientRect();
 
       const isInViewport =
-        rect.top >= 0 &&
-        rect.left >= 0 &&
+        rect.bottom >= 0 &&
+        rect.right >= 0 &&
         // $FlowFixMe
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.top <= (window.innerHeight || document.documentElement.clientHeight) &&
         // $FlowFixMe
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+        rect.left <= (window.innerWidth || document.documentElement.clientWidth);
 
       if (isInViewport) {
         // handleMoreBelow();

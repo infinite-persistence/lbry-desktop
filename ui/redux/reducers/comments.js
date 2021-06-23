@@ -103,7 +103,7 @@ export default handleActions(
 
           // Update the parent's "replies" value
           if (commentById[comment.parent_id]) {
-            commentById[comment.parent_id].replies = repliesByParentId[comment.parent_id].length;
+            commentById[comment.parent_id].replies = (commentById[comment.parent_id].replies || 0) + 1;
           }
         } else {
           if (!topLevelCommentsById[claimId]) {
@@ -480,7 +480,7 @@ export default handleActions(
           repliesByParentId[comment.parent_id].splice(index, 1);
 
           if (commentById[comment.parent_id]) {
-            commentById[comment.parent_id].replies = repliesByParentId[comment.parent_id].length;
+            commentById[comment.parent_id].replies = Math.max(0, (commentById[comment.parent_id].replies || 0) - 1);
           }
 
           if (totalRepliesByParentId[comment.parent_id]) {
