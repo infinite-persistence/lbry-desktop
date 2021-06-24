@@ -3,13 +3,21 @@ import * as ACTIONS from 'constants/action_types';
 import * as REACTION_TYPES from 'constants/reactions';
 import * as PAGES from 'constants/pages';
 import { BLOCK_LEVEL } from 'constants/comment';
-import { Lbry, parseURI, buildURI, selectClaimsById, selectClaimsByUri, selectMyChannelClaims } from 'lbry-redux';
+import {
+  Lbry,
+  parseURI,
+  buildURI,
+  selectClaimsById,
+  selectClaimsByUri,
+  selectMyChannelClaims,
+  makeSelectClaimIdForUri,
+} from 'lbry-redux';
 import { doToast, doSeeNotifications } from 'redux/actions/notifications';
 import {
-  makeSelectCommentIdsForUri,
   makeSelectMyReactionsForComment,
   makeSelectOthersReactionsForComment,
   selectPendingCommentReacts,
+  selectCommentsPendingReactFetchById,
   selectModerationBlockList,
   selectModerationDelegatorsById,
 } from 'redux/selectors/comments';
@@ -175,13 +183,18 @@ export function doCommentReactList(uri: string | null, commentId?: string) {
   return (dispatch: Dispatch, getState: GetState) => {
     const state = getState();
     const activeChannelClaim = selectActiveChannelClaim(state);
-    const commentIds = uri ? makeSelectCommentIdsForUri(uri)(state) : [commentId];
+    const claimId = makeSelectClaimIdForUri(uri)(state);
+    const commentIds = uri ? selectCommentsPendingReactFetchById(state)[claimId] : [commentId];
 
     dispatch({
       type: ACTIONS.COMMENT_REACTION_LIST_STARTED,
     });
 
-    const params: { comment_ids: string, channel_name?: string, channel_id?: string } = {
+    const params: {
+      comment_ids: string,
+      channel_name?: string,
+      channel_id?: string,
+    } = {
       comment_ids: commentIds.join(','),
     };
 
@@ -198,6 +211,7 @@ export function doCommentReactList(uri: string | null, commentId?: string) {
           data: {
             myReactions: myReactions || {},
             othersReactions,
+            claimId,
           },
         });
       })
