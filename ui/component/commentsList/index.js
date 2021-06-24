@@ -6,6 +6,7 @@ import {
   makeSelectTotalCommentsCountForUri,
   makeSelectTotalTopLevelCommentsForUri,
   selectOthersReactsById,
+  makeSelectNumPendingReactionFetch,
   makeSelectCommentsDisabledForUri,
 } from 'redux/selectors/comments';
 import { doCommentReset, doCommentList, doCommentReactList } from 'redux/actions/comments';
@@ -25,6 +26,7 @@ const select = (state, props) => ({
   fetchingChannels: selectFetchingMyChannels(state),
   reactionsById: selectOthersReactsById(state),
   activeChannelId: selectActiveChannelId(state),
+  numPendingReactionFetch: makeSelectNumPendingReactionFetch(props.uri)(state),
 });
 
 const perform = (dispatch) => ({
