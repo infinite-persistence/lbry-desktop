@@ -27,6 +27,7 @@ const defaultState: CommentsState = {
   typesReacting: [],
   myReactsByCommentId: undefined,
   othersReactsByCommentId: undefined,
+  commentsPendingReactFetchById: {},
   moderationBlockList: undefined,
   adminBlockList: undefined,
   moderatorBlockList: undefined,
@@ -44,6 +45,23 @@ const defaultState: CommentsState = {
   fetchingSettings: false,
   fetchingBlockedWords: false,
 };
+
+function pushToArrayInObject(object: Object, key: string, value: string) {
+  if (!object[key]) {
+    object[key] = [value];
+  } else if (!object[key].includes(value)) {
+    object[key].push(value);
+  }
+}
+
+function popFromArrayInObject(object: Object, key: string, value: string) {
+  if (object[key]) {
+    const index = object[key].indexOf(value);
+    if (index > -1) {
+      object[key].splice(index, 1);
+    }
+  }
+}
 
 export default handleActions(
   {
@@ -173,11 +191,14 @@ export default handleActions(
     },
 
     [ACTIONS.COMMENT_REACTION_LIST_COMPLETED]: (state: CommentsState, action: any): CommentsState => {
-      const { myReactions, othersReactions } = action.data;
+      const { myReactions, othersReactions, claimId } = action.data;
       const myReacts = Object.assign({}, state.myReactsByCommentId);
       const othersReacts = Object.assign({}, state.othersReactsByCommentId);
+      const commentsPendingReactFetchById = Object.assign({}, state.commentsPendingReactFetchById);
+
       if (myReactions) {
         Object.entries(myReactions).forEach(([commentId, reactions]) => {
+          popFromArrayInObject(commentsPendingReactFetchById, claimId, commentId);
           myReacts[commentId] = Object.entries(reactions).reduce((acc, [name, count]) => {
             if (count === 1) {
               acc.push(name);
@@ -186,9 +207,11 @@ export default handleActions(
           }, []);
         });
       }
+
       if (othersReactions) {
         Object.entries(othersReactions).forEach(([commentId, reactions]) => {
           othersReacts[commentId] = reactions;
+          popFromArrayInObject(commentsPendingReactFetchById, claimId, commentId);
         });
       }
 
@@ -197,6 +220,7 @@ export default handleActions(
         isFetchingReacts: false,
         myReactsByCommentId: myReacts,
         othersReactsByCommentId: othersReacts,
+        commentsPendingReactFetchById,
       };
     },
 
@@ -249,11 +273,14 @@ export default handleActions(
       const repliesByParentId = Object.assign({}, state.repliesByParentId);
       const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
       const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
+      const commentsPendingReactFetchById = Object.assign({}, state.commentsPendingReactFetchById);
 
       const commonUpdateAction = (comment, commentById, commentIds, index) => {
         // map the comment_ids to the new comments
         commentById[comment.comment_id] = comment;
         commentIds[index] = comment.comment_id;
+        // Mark comment-id as needing to fetch reacts.
+        pushToArrayInObject(commentsPendingReactFetchById, claimId, comment.comment_id);
       };
 
       if (comments) {
@@ -317,6 +344,7 @@ export default handleActions(
         commentsDisabledChannelIds,
         isLoading: false,
         isLoadingByParentId,
+        commentsPendingReactFetchById,
       };
     },
 
