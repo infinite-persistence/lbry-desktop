@@ -17,6 +17,9 @@ import CommentCreate from 'component/commentCreate';
 import usePersistedState from 'effects/use-persisted-state';
 import { ENABLE_COMMENT_REACTIONS } from 'config';
 import Empty from 'component/common/empty';
+import debounce from 'util/debounce';
+
+const DEBOUNCE_SCROLL_HANDLER_MS = 10;
 
 type Props = {
   topLevelComments: Array<Comment>,
@@ -34,6 +37,7 @@ type Props = {
   fetchingChannels: boolean,
   reactionsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
   activeChannelId: ?string,
+  numPendingReactionFetch: number, // Number of fetched comments without a matching reactions-fetch.
 };
 
 function CommentList(props: Props) {
@@ -53,6 +57,7 @@ function CommentList(props: Props) {
     fetchingChannels,
     reactionsById,
     activeChannelId,
+    numPendingReactionFetch,
   } = props;
   const commentRef = React.useRef();
   const spinnerRef = React.useRef();
@@ -100,14 +105,14 @@ function CommentList(props: Props) {
   }, [fetchTopLevelComments, uri, page, resetComments]);
 
   useEffect(() => {
-    if (page && totalComments && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
+    if (numPendingReactionFetch > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
       fetchReacts(uri)
         .then(() => {
           setReadyToDisplayComments(true);
         })
         .catch(() => setReadyToDisplayComments(true));
     }
-  }, [fetchReacts, uri, totalComments, activeChannelId, fetchingChannels]);
+  }, [fetchReacts, uri, numPendingReactionFetch, activeChannelId, fetchingChannels]);
 
   useEffect(() => {
     if (readyToDisplayComments && linkedCommentId && commentRef && commentRef.current) {
@@ -117,7 +122,7 @@ function CommentList(props: Props) {
   }, [readyToDisplayComments, linkedCommentId]);
 
   useEffect(() => {
-    function handleCommentScroll() {
+    const handleCommentScroll = debounce(() => {
       // $FlowFixMe
       const rect = spinnerRef.current.getBoundingClientRect();
 
@@ -134,7 +139,7 @@ function CommentList(props: Props) {
           setPage(page + 1);
         }
       }
-    }
+    }, DEBOUNCE_SCROLL_HANDLER_MS);
 
     if (!isFetchingComments && readyToDisplayComments && moreBelow && spinnerRef && spinnerRef.current) {
       window.addEventListener('scroll', handleCommentScroll);
