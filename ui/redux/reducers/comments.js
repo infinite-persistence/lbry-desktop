@@ -364,16 +364,19 @@ export default handleActions(
       const { claimId } = action.data;
 
       const byId = Object.assign({}, state.byId);
+      const totalCommentsById = Object.assign({}, state.totalCommentsById);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
 
-      delete topLevelCommentsById[claimId];
       delete byId[claimId];
+      delete totalCommentsById[claimId];
+      delete topLevelCommentsById[claimId];
       delete totalTopLevelCommentsById[claimId];
 
       return {
         ...state,
         byId,
+        totalCommentsById,
         topLevelCommentsById,
         totalTopLevelCommentsById,
       };
