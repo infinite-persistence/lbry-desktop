@@ -170,6 +170,17 @@ export const makeSelectOthersReactionsForComment = (commentId: string) =>
 
 export const selectPendingCommentReacts = createSelector(selectState, (state) => state.pendingCommentReactions);
 
+export const selectCommentsPendingReactFetchById = createSelector(
+  selectState,
+  (state) => state.commentsPendingReactFetchById
+);
+
+export const makeSelectNumPendingReactionFetch = (uri: string) =>
+  createSelector(selectState, selectCommentsByUri, selectCommentsPendingReactFetchById, (state, byUri, pendingById) => {
+    const claimId = byUri[uri];
+    return pendingById[claimId] ? pendingById[claimId].length || 0 : 0;
+  });
+
 export const selectSettingsByChannelId = createSelector(selectState, (state) => state.settingsByChannelId);
 
 export const selectFetchingCreatorSettings = createSelector(selectState, (state) => state.fetchingSettings);

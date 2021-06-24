@@ -41,6 +41,7 @@ declare type CommentsState = {
   isFetchingReacts: boolean,
   myReactsByCommentId: any,
   othersReactsByCommentId: any,
+  commentsPendingReactFetchById: { [string]: Array<string> }, // ClaimId -> list of comment IDs without a reacts-fetch
   pendingCommentReactions: Array<string>,
   moderationBlockList: ?Array<string>, // @KP rename to "personalBlockList"?
   adminBlockList: ?Array<string>,
