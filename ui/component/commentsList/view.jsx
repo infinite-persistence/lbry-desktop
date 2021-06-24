@@ -61,7 +61,7 @@ function CommentList(props: Props) {
     ENABLE_COMMENT_REACTIONS ? SORT_COMMENTS_BEST : SORT_COMMENTS_NEW
   );
 
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = React.useState(0);
 
   // Display comments immediately if not fetching reactions
   // If not, wait to show comments until reactions are fetched
@@ -84,16 +84,23 @@ function CommentList(props: Props) {
     return false;
   };
 
+  // Reset comments
+  useEffect(() => {
+    if (page === 0) {
+      resetComments(uri);
+      setPage(1);
+    }
+  }, [page, uri, resetComments]);
+
   // Fetch top-level comments
   useEffect(() => {
-    if (page === 1) {
-      resetComments(uri);
+    if (page !== 0) {
+      fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL);
     }
-    fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL);
   }, [fetchTopLevelComments, uri, page, resetComments]);
 
   useEffect(() => {
-    if (totalComments && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
+    if (page && totalComments && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
       fetchReacts(uri)
         .then(() => {
           setReadyToDisplayComments(true);
@@ -225,8 +232,7 @@ function CommentList(props: Props) {
             icon={ICONS.REFRESH}
             title={__('Refresh')}
             onClick={() => {
-              setPage(1);
-              fetchReacts(uri);
+              setPage(0);
             }}
           />
         </>
