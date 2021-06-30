@@ -30,7 +30,7 @@ const select = (state, props) => ({
 });
 
 const perform = (dispatch) => ({
-  fetchTopLevelComments: (uri, page, pageSize) => dispatch(doCommentList(uri, '', page, pageSize)),
+  fetchTopLevelComments: (uri, page, pageSize, sortBy) => dispatch(doCommentList(uri, '', page, pageSize, sortBy)),
   fetchReacts: (uri) => dispatch(doCommentReactList(uri)),
   resetComments: (uri) => dispatch(doCommentReset(uri)),
 });

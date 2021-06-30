@@ -2,7 +2,7 @@
 import * as ACTIONS from 'constants/action_types';
 import * as REACTION_TYPES from 'constants/reactions';
 import * as PAGES from 'constants/pages';
-import { BLOCK_LEVEL } from 'constants/comment';
+import { SORT_BY, BLOCK_LEVEL } from 'constants/comment';
 import {
   Lbry,
   parseURI,
@@ -26,7 +26,13 @@ import { selectActiveChannelClaim } from 'redux/selectors/app';
 import { toHex } from 'util/hex';
 import Comments from 'comments';
 
-export function doCommentList(uri: string, parentId: string, page: number = 1, pageSize: number = 99999) {
+export function doCommentList(
+  uri: string,
+  parentId: string,
+  page: number = 1,
+  pageSize: number = 99999,
+  sortBy: number = SORT_BY.NEWEST
+) {
   return (dispatch: Dispatch, getState: GetState) => {
     const state = getState();
     const claim = selectClaimsByUri(state)[uri];
@@ -59,6 +65,7 @@ export function doCommentList(uri: string, parentId: string, page: number = 1, p
       top_level: !parentId,
       channel_id: authorChannelClaim ? authorChannelClaim.claim_id : undefined,
       channel_name: authorChannelClaim ? authorChannelClaim.name : undefined,
+      sort_by: sortBy,
     })
       .then((result: CommentListResponse) => {
         const { items: comments, total_items } = result;

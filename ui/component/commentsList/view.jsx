@@ -1,12 +1,7 @@
 // @flow
 import * as REACTION_TYPES from 'constants/reactions';
 import * as ICONS from 'constants/icons';
-import {
-  SORT_COMMENTS_NEW,
-  SORT_COMMENTS_BEST,
-  SORT_COMMENTS_CONTROVERSIAL,
-  COMMENT_PAGE_SIZE_TOP_LEVEL,
-} from 'constants/comment';
+import { COMMENT_PAGE_SIZE_TOP_LEVEL, SORT_BY } from 'constants/comment';
 import React, { useEffect } from 'react';
 import classnames from 'classnames';
 import CommentView from 'component/comment';
@@ -24,7 +19,7 @@ const DEBOUNCE_SCROLL_HANDLER_MS = 10;
 type Props = {
   topLevelComments: Array<Comment>,
   commentsDisabledBySettings: boolean,
-  fetchTopLevelComments: (string, number, number) => void,
+  fetchTopLevelComments: (string, number, number, number) => void,
   fetchReacts: (string) => Promise<any>,
   resetComments: (string) => void,
   uri: string,
@@ -62,10 +57,9 @@ function CommentList(props: Props) {
   const commentRef = React.useRef();
   const spinnerRef = React.useRef();
   const [sort, setSort] = usePersistedState(
-    'comment-sort',
-    ENABLE_COMMENT_REACTIONS ? SORT_COMMENTS_BEST : SORT_COMMENTS_NEW
+    'comment-sort-by',
+    ENABLE_COMMENT_REACTIONS ? SORT_BY.POPULARITY : SORT_BY.NEWEST
   );
-
   const [page, setPage] = React.useState(0);
 
   // Display comments immediately if not fetching reactions
@@ -89,6 +83,13 @@ function CommentList(props: Props) {
     return false;
   };
 
+  function changeSort(newSort) {
+    if (sort !== newSort) {
+      setSort(newSort);
+      setPage(0); // Invalidate existing comments
+    }
+  }
+
   // Reset comments
   useEffect(() => {
     if (page === 0) {
@@ -100,9 +101,9 @@ function CommentList(props: Props) {
   // Fetch top-level comments
   useEffect(() => {
     if (page !== 0) {
-      fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL);
+      fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL, sort);
     }
-  }, [fetchTopLevelComments, uri, page, resetComments]);
+  }, [fetchTopLevelComments, uri, page, resetComments, sort]);
 
   useEffect(() => {
     if (numPendingReactionFetch > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
@@ -205,9 +206,9 @@ function CommentList(props: Props) {
                 label={__('Best')}
                 icon={ICONS.BEST}
                 iconSize={18}
-                onClick={() => setSort(SORT_COMMENTS_BEST)}
+                onClick={() => changeSort(SORT_BY.POPULARITY)}
                 className={classnames(`button-toggle`, {
-                  'button-toggle--active': sort === SORT_COMMENTS_BEST,
+                  'button-toggle--active': sort === SORT_BY.POPULARITY,
                 })}
               />
               <Button
@@ -215,9 +216,9 @@ function CommentList(props: Props) {
                 label={__('Controversial')}
                 icon={ICONS.CONTROVERSIAL}
                 iconSize={18}
-                onClick={() => setSort(SORT_COMMENTS_CONTROVERSIAL)}
+                onClick={() => changeSort(SORT_BY.CONTROVERSY)}
                 className={classnames(`button-toggle`, {
-                  'button-toggle--active': sort === SORT_COMMENTS_CONTROVERSIAL,
+                  'button-toggle--active': sort === SORT_BY.CONTROVERSY,
                 })}
               />
               <Button
@@ -225,9 +226,9 @@ function CommentList(props: Props) {
                 label={__('New')}
                 icon={ICONS.NEW}
                 iconSize={18}
-                onClick={() => setSort(SORT_COMMENTS_NEW)}
+                onClick={() => changeSort(SORT_BY.NEWEST)}
                 className={classnames(`button-toggle`, {
-                  'button-toggle--active': sort === SORT_COMMENTS_NEW,
+                  'button-toggle--active': sort === SORT_BY.NEWEST,
                 })}
               />
             </span>
