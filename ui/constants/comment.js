@@ -4,6 +4,13 @@ export const SORT_COMMENTS_NEW = 'new';
 export const SORT_COMMENTS_BEST = 'best';
 export const SORT_COMMENTS_CONTROVERSIAL = 'controversial';
 
+export const SORT_BY = {
+  NEWEST: 0,
+  OLDEST: 1,
+  CONTROVERSY: 2,
+  POPULARITY: 3,
+};
+
 export const BLOCK_LEVEL = {
   SELF: 'self',
   MODERATOR: 'moderator',
