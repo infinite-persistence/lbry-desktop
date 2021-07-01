@@ -39,7 +39,7 @@ declare type CommentsState = {
   isLoadingByParentId: { [string]: boolean },
   myComments: ?Set<string>,
   isFetchingReacts: boolean,
-  myReactsByCommentId: any,
+  myReactsByCommentId: { [string]: Array<string> }, // "CommentId:ChannelId" -> reaction array (note the ID concatenation)
   othersReactsByCommentId: any,
   commentsPendingReactFetchById: { [string]: Array<string> }, // ClaimId -> list of comment IDs without a reacts-fetch
   pendingCommentReactions: Array<string>,
@@ -68,6 +68,14 @@ declare type CommentReactParams = {
   react_type: string,
   clear_types?: string,
   remove?: boolean,
+};
+
+declare type CommentReactListParams = {
+  comment_ids?: string,
+  channel_id?: string,
+  channel_name?: string,
+  wallet_id?: string,
+  react_types?: string,
 };
 
 declare type CommentListParams = {

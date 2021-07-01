@@ -6,13 +6,17 @@ import { makeSelectMyReactionsForComment, makeSelectOthersReactionsForComment } 
 import { doCommentReact } from 'redux/actions/comments';
 import { selectActiveChannelId } from 'redux/selectors/app';
 
-const select = (state, props) => ({
-  claim: makeSelectClaimForUri(props.uri)(state),
-  claimIsMine: makeSelectClaimIsMine(props.uri)(state),
-  myReacts: makeSelectMyReactionsForComment(props.commentId)(state),
-  othersReacts: makeSelectOthersReactionsForComment(props.commentId)(state),
-  activeChannelId: selectActiveChannelId(state),
-});
+const select = (state, props) => {
+  const activeChannelId = selectActiveChannelId(state);
+
+  return {
+    claim: makeSelectClaimForUri(props.uri)(state),
+    claimIsMine: makeSelectClaimIsMine(props.uri)(state),
+    myReacts: makeSelectMyReactionsForComment(`${props.commentId}:${activeChannelId}`)(state),
+    othersReacts: makeSelectOthersReactionsForComment(props.commentId)(state),
+    activeChannelId,
+  };
+};
 
 const perform = dispatch => ({
   react: (commentId, type) => dispatch(doCommentReact(commentId, type)),

@@ -14,7 +14,7 @@ import { ENABLE_COMMENT_REACTIONS } from 'config';
 import Empty from 'component/common/empty';
 import debounce from 'util/debounce';
 
-const DEBOUNCE_SCROLL_HANDLER_MS = 10;
+const DEBOUNCE_SCROLL_HANDLER_MS = 100;
 
 type Props = {
   topLevelComments: Array<Comment>,
@@ -31,6 +31,8 @@ type Props = {
   totalTopLevelComments: number,
   fetchingChannels: boolean,
   reactionsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
+  commentIds: any,
+  myReactionsByCommentId: any,
   activeChannelId: ?string,
   numPendingReactionFetch: number, // Number of fetched comments without a matching reactions-fetch.
 };
@@ -51,6 +53,8 @@ function CommentList(props: Props) {
     totalTopLevelComments,
     fetchingChannels,
     reactionsById,
+    commentIds,
+    myReactionsByCommentId,
     activeChannelId,
     numPendingReactionFetch,
   } = props;
@@ -71,6 +75,8 @@ function CommentList(props: Props) {
   const linkedCommentId = linkedComment && linkedComment.comment_id;
   const hasNoComments = !totalComments;
   const moreBelow = totalTopLevelComments - topLevelComments.length > 0;
+
+  console.log('myReactionsByCommentId:', myReactionsByCommentId);
 
   const isMyComment = (channelId: string): boolean => {
     if (myChannels != null && channelId != null) {
@@ -102,18 +108,35 @@ function CommentList(props: Props) {
   useEffect(() => {
     if (page !== 0) {
       fetchTopLevelComments(uri, page, COMMENT_PAGE_SIZE_TOP_LEVEL, sort);
+      setReadyToDisplayComments(true); // @KP temp
     }
   }, [fetchTopLevelComments, uri, page, resetComments, sort]);
 
   useEffect(() => {
-    if (numPendingReactionFetch > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
-      fetchReacts(uri)
-        .then(() => {
-          setReadyToDisplayComments(true);
-        })
-        .catch(() => setReadyToDisplayComments(true));
+    if (commentIds && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
+      let commentIdsPendingReactionFetch = commentIds;
+
+      console.log('--------------------------');
+      console.log('  commentIdsPendingReactionFetch:', commentIdsPendingReactionFetch);
+
+      if (myReactionsByCommentId) {
+        console.log('Filtering...');
+        commentIdsPendingReactionFetch = commentIds.filter((commentId) => {
+          return !myReactionsByCommentId[`${commentId}:${activeChannelId}`];
+        });
+      }
+
+      console.log('  commentIdsPendingReactionFetch:', commentIdsPendingReactionFetch);
+
+      if (commentIdsPendingReactionFetch.length !== 0) {
+        fetchReacts(null, commentIdsPendingReactionFetch)
+          .then(() => {
+            setReadyToDisplayComments(true);
+          })
+          .catch(() => setReadyToDisplayComments(true));
+      }
     }
-  }, [fetchReacts, uri, numPendingReactionFetch, activeChannelId, fetchingChannels]);
+  }, [commentIds, myReactionsByCommentId, fetchReacts, uri, numPendingReactionFetch, activeChannelId, fetchingChannels]);
 
   useEffect(() => {
     if (readyToDisplayComments && linkedCommentId && commentRef && commentRef.current) {

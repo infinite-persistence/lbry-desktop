@@ -150,13 +150,20 @@ export const makeSelectCommentIdsForUri = (uri: string) =>
     return state.byId[claimId];
   });
 
-export const makeSelectMyReactionsForComment = (commentId: string) =>
+export const selectMyReactionsByCommentId = createSelector(selectState, (state) => state.myReactsByCommentId);
+
+/**
+ * makeSelectMyReactionsForComment
+ *
+ * @param commentIdChannelId Format = "commentId:channelId".
+ */
+export const makeSelectMyReactionsForComment = (commentIdChannelId: string) =>
   createSelector(selectState, (state) => {
     if (!state.myReactsByCommentId) {
       return [];
     }
 
-    return state.myReactsByCommentId[commentId] || [];
+    return state.myReactsByCommentId[commentIdChannelId] || [];
   });
 
 export const makeSelectOthersReactionsForComment = (commentId: string) =>

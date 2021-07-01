@@ -191,16 +191,16 @@ export default handleActions(
     },
 
     [ACTIONS.COMMENT_REACTION_LIST_COMPLETED]: (state: CommentsState, action: any): CommentsState => {
-      const { myReactions, othersReactions, claimId } = action.data;
+      const { myReactions, othersReactions, channelId } = action.data;
       const myReacts = Object.assign({}, state.myReactsByCommentId);
       const othersReacts = Object.assign({}, state.othersReactsByCommentId);
       const commentsPendingReactFetchById = Object.assign({}, state.commentsPendingReactFetchById);
 
       if (myReactions) {
         Object.entries(myReactions).forEach(([commentId, reactions]) => {
-          popFromArrayInObject(commentsPendingReactFetchById, claimId, commentId);
-          myReacts[commentId] = Object.entries(reactions).reduce((acc, [name, count]) => {
-            if (count === 1) {
+          // popFromArrayInObject(commentsPendingReactFetchById, claimId, commentId);
+          myReacts[`${commentId}:${channelId}`] = Object.entries(reactions).reduce((acc, [name, count]) => {
+              if (count === 1) {
               acc.push(name);
             }
             return acc;
@@ -211,7 +211,7 @@ export default handleActions(
       if (othersReactions) {
         Object.entries(othersReactions).forEach(([commentId, reactions]) => {
           othersReacts[commentId] = reactions;
-          popFromArrayInObject(commentsPendingReactFetchById, claimId, commentId);
+          // popFromArrayInObject(commentsPendingReactFetchById, claimId, commentId);
         });
       }
 

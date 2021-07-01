@@ -14,6 +14,7 @@ import {
 } from 'lbry-redux';
 import { doToast, doSeeNotifications } from 'redux/actions/notifications';
 import {
+  makeSelectCommentIdsForUri,
   makeSelectMyReactionsForComment,
   makeSelectOthersReactionsForComment,
   selectPendingCommentReacts,
@@ -186,22 +187,31 @@ export function doSuperChatList(uri: string) {
   };
 }
 
-export function doCommentReactList(uri: string | null, commentId?: string) {
+export function doCommentReactList(uri: string | null, commentIdss?: string) {
   return (dispatch: Dispatch, getState: GetState) => {
     const state = getState();
     const activeChannelClaim = selectActiveChannelClaim(state);
-    const claimId = makeSelectClaimIdForUri(uri)(state);
-    const commentIds = uri ? selectCommentsPendingReactFetchById(state)[claimId] : [commentId];
+    // const claimId = makeSelectClaimIdForUri(uri)(state);
+    let commentIds = uri ? makeSelectCommentIdsForUri(uri)(state) : commentIdss;
+    // const commentIds = uri ? selectCommentsPendingReactFetchById(state)[claimId] : [commentId];  // @KP kill selectCommentsPendingReactFetchById
+    // if (uri) {
+    //   commentIds = commentIds.filter((x) => {
+    //     // For activeChannelClaim, skip reaction-fetch if already done.
+    //     const myReacts = makeSelectMyReactionsForComment(`${commentId}:${activeChannelClaim.claim_id}`)(state);
+    //     return !myReacts;
+    //   });
+    // }
+
+    if (commentIds.length === 0) {
+      console.log('doCommentReactList: all reactions fetched');
+      return;
+    }
 
     dispatch({
       type: ACTIONS.COMMENT_REACTION_LIST_STARTED,
     });
 
-    const params: {
-      comment_ids: string,
-      channel_name?: string,
-      channel_id?: string,
-    } = {
+    const params: CommentReactListParams = {
       comment_ids: commentIds.join(','),
     };
 
@@ -218,7 +228,7 @@ export function doCommentReactList(uri: string | null, commentId?: string) {
           data: {
             myReactions: myReactions || {},
             othersReactions,
-            claimId,
+            channelId: activeChannelClaim.claim_id,
           },
         });
       })
@@ -257,7 +267,7 @@ export function doCommentReact(commentId: string, type: string) {
       return;
     }
 
-    let myReacts = makeSelectMyReactionsForComment(commentId)(state);
+    let myReacts = makeSelectMyReactionsForComment(`${commentId}:${activeChannelClaim.claim_id}`)(state);  // @KP update
     const othersReacts = makeSelectOthersReactionsForComment(commentId)(state);
     const params: CommentReactParams = {
       comment_ids: commentId,
