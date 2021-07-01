@@ -1,7 +1,7 @@
 // @flow
 import * as ICONS from 'constants/icons';
 import * as PAGES from 'constants/pages';
-import { COMMENT_PAGE_SIZE_REPLIES } from 'constants/comment';
+import { SORT_BY, COMMENT_PAGE_SIZE_REPLIES } from 'constants/comment';
 import { FF_MAX_CHARS_IN_COMMENT } from 'constants/form-field';
 import { SITE_NAME, SIMPLE_SITE, ENABLE_COMMENT_REACTIONS } from 'config';
 import React, { useEffect, useState } from 'react';
@@ -37,7 +37,7 @@ type Props = {
   claimIsMine: boolean, // if you control the claim which this comment was posted on
   commentIsMine: boolean, // if this comment was signed by an owned channel
   updateComment: (string, string) => void,
-  fetchReplies: (string, string, number, number) => void,
+  fetchReplies: (string, string, number, number, number) => void,
   commentModBlock: (string) => void,
   linkedComment?: any,
   myChannels: ?Array<ChannelClaim>,
@@ -141,7 +141,7 @@ function Comment(props: Props) {
 
   useEffect(() => {
     if (page > 0) {
-      fetchReplies(uri, commentId, page, COMMENT_PAGE_SIZE_REPLIES);
+      fetchReplies(uri, commentId, page, COMMENT_PAGE_SIZE_REPLIES, SORT_BY.OLDEST);
     }
   }, [page, uri, commentId, fetchReplies]);
 

@@ -30,7 +30,8 @@ const select = (state, props) => ({
 const perform = (dispatch) => ({
   clearPlayingUri: () => dispatch(doSetPlayingUri({ uri: null })),
   updateComment: (commentId, comment) => dispatch(doCommentUpdate(commentId, comment)),
-  fetchReplies: (uri, parentId, page, pageSize) => dispatch(doCommentList(uri, parentId, page, pageSize)),
+  fetchReplies: (uri, parentId, page, pageSize, sortBy) =>
+    dispatch(doCommentList(uri, parentId, page, pageSize, sortBy)),
   doToast: (options) => dispatch(doToast(options)),
 });
 
