@@ -100,7 +100,6 @@ function Comment(props: Props) {
   // used for controlling the visibility of the menu icon
   const [mouseIsHovering, setMouseHover] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
-  const [justRepliedCount, setJustRepliedCount] = useState(0);
   const [page, setPage] = useState(0);
   const [advancedEditor] = usePersistedState('comment-editor-mode', false);
   const [displayDeadComment, setDisplayDeadComment] = React.useState(false);
@@ -316,13 +315,13 @@ function Comment(props: Props) {
                   {ENABLE_COMMENT_REACTIONS && <CommentReactions uri={uri} commentId={commentId} />}
                 </div>
 
-                {numDirectReplies > 0 && numDirectReplies !== justRepliedCount && !showReplies && (
+                {numDirectReplies > 0 && !showReplies && (
                   <div className="comment__actions">
                     <Button
                       label={
                         numDirectReplies < 2
                           ? __('Show reply')
-                          : __('Show %count% replies', { count: numDirectReplies - justRepliedCount })
+                          : __('Show %count% replies', { count: numDirectReplies })
                       }
                       button="link"
                       onClick={() => {
@@ -337,14 +336,7 @@ function Comment(props: Props) {
 
                 {numDirectReplies > 0 && showReplies && (
                   <div className="comment__actions">
-                    <Button
-                      label={__('Hide replies')}
-                      button="link"
-                      onClick={() => {
-                        setJustRepliedCount(0);
-                        setShowReplies(false);
-                      }}
-                    />
+                    <Button label={__('Hide replies')} button="link" onClick={() => setShowReplies(false)} />
                   </div>
                 )}
 
@@ -354,7 +346,7 @@ function Comment(props: Props) {
                     uri={uri}
                     parentId={commentId}
                     onDoneReplying={() => {
-                      setJustRepliedCount(justRepliedCount + 1);
+                      setShowReplies(true);
                       setReplying(false);
                     }}
                     onCancelReplying={() => {
@@ -368,7 +360,7 @@ function Comment(props: Props) {
         </div>
       </div>
 
-      {(showReplies || justRepliedCount > 0) && (
+      {showReplies && (
         <CommentsReplies
           threadDepth={threadDepth - 1}
           uri={uri}
