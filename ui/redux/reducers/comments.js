@@ -12,7 +12,8 @@ const defaultState: CommentsState = {
   repliesByParentId: {}, // ParentCommentID -> list of fetched replies.
   totalRepliesByParentId: {}, // ParentCommentID -> total replies in commentron.
   topLevelCommentsById: {}, // ClaimID -> list of fetched top level comments.
-  totalTopLevelCommentsById: {}, // ClaimID -> total top level comments in commentron.
+  topLevelTotalPagesById: {}, // ClaimID -> total number of top-level pages in commentron. Based on COMMENT_PAGE_SIZE_TOP_LEVEL.
+  topLevelTotalCommentsById: {}, // ClaimID -> total top level comments in commentron.
   // TODO:
   // Remove commentsByUri
   // It is not needed and doesn't provide anything but confusion
@@ -248,7 +249,7 @@ export default handleActions(
       const commentById = Object.assign({}, state.commentById);
       const byId = Object.assign({}, state.byId);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
-      const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
+      const topLevelTotalCommentsById = Object.assign({}, state.topLevelTotalCommentsById);
       const commentsByUri = Object.assign({}, state.commentsByUri);
       const repliesByParentId = Object.assign({}, state.repliesByParentId);
       const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
@@ -268,7 +269,7 @@ export default handleActions(
 
         // --- Top-level comments ---
         if (!parentId) {
-          totalTopLevelCommentsById[claimId] = totalItems;
+          topLevelTotalCommentsById[claimId] = totalItems;
 
           if (!topLevelCommentsById[claimId]) {
             topLevelCommentsById[claimId] = [];
@@ -312,7 +313,7 @@ export default handleActions(
       return {
         ...state,
         topLevelCommentsById,
-        totalTopLevelCommentsById,
+        topLevelTotalCommentsById,
         repliesByParentId,
         totalRepliesByParentId,
         byId,
@@ -370,7 +371,7 @@ export default handleActions(
       const byId = Object.assign({}, state.byId);
       const totalCommentsById = Object.assign({}, state.totalCommentsById);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
-      const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
+      const topLevelTotalCommentsById = Object.assign({}, state.topLevelTotalCommentsById);
       const myReacts = Object.assign({}, state.myReactsByCommentId);
       const othersReacts = Object.assign({}, state.othersReactsByCommentId);
 
@@ -391,14 +392,14 @@ export default handleActions(
       delete byId[claimId];
       delete totalCommentsById[claimId];
       delete topLevelCommentsById[claimId];
-      delete totalTopLevelCommentsById[claimId];
+      delete topLevelTotalCommentsById[claimId];
 
       return {
         ...state,
         byId,
         totalCommentsById,
         topLevelCommentsById,
-        totalTopLevelCommentsById,
+        topLevelTotalCommentsById,
         myReactsByCommentId: myReacts,
         othersReactsByCommentId: othersReacts,
       };

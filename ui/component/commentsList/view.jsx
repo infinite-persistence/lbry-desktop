@@ -28,7 +28,7 @@ type Props = {
   isFetchingComments: boolean,
   linkedComment: any,
   totalComments: number,
-  totalTopLevelComments: number,
+  topLevelTotalComments: number,
   fetchingChannels: boolean,
   myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
   othersReactsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
@@ -49,7 +49,7 @@ function CommentList(props: Props) {
     isFetchingComments,
     linkedComment,
     totalComments,
-    totalTopLevelComments,
+    topLevelTotalComments,
     fetchingChannels,
     myReactsByCommentId,
     othersReactsById,
@@ -73,7 +73,7 @@ function CommentList(props: Props) {
 
   const linkedCommentId = linkedComment && linkedComment.comment_id;
   const hasNoComments = !totalComments;
-  const moreBelow = totalTopLevelComments - topLevelComments.length > 0;
+  const moreBelow = topLevelTotalComments - topLevelComments.length > 0;
 
   const isMyComment = (channelId: string): boolean => {
     if (myChannels != null && channelId != null) {
@@ -161,7 +161,7 @@ function CommentList(props: Props) {
         rect.left <= (window.innerWidth || document.documentElement.clientWidth);
 
       if (isInViewport) {
-        if (topLevelComments.length < totalTopLevelComments) {
+        if (topLevelComments.length < topLevelTotalComments) {
           setPage(page + 1);
         }
       }
@@ -179,7 +179,7 @@ function CommentList(props: Props) {
     isFetchingComments,
     readyToDisplayComments,
     topLevelComments.length,
-    totalTopLevelComments,
+    topLevelTotalComments,
   ]);
 
   function prepareComments(arrayOfComments, linkedComment /* , isFetchingComments */) {

@@ -33,7 +33,8 @@ declare type CommentsState = {
   repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of fetched replies.
   totalRepliesByParentId: {}, // ParentCommentID -> total replies in commentron.
   topLevelCommentsById: { [string]: Array<string> }, // ClaimID -> list of fetched top level comments.
-  totalTopLevelCommentsById: { [string]: number }, // ClaimID -> total top level comments in commentron.
+  topLevelTotalPagesById: { [string]: number }, // ClaimID -> total number of top-level pages in commentron. Based on COMMENT_PAGE_SIZE_TOP_LEVEL.
+  topLevelTotalCommentsById: { [string]: number }, // ClaimID -> total top level comments in commentron.
   commentById: { [string]: Comment },
   isLoading: boolean,
   isLoadingByParentId: { [string]: boolean },
