@@ -284,10 +284,10 @@ export const makeSelectTopLevelCommentsForUri = (uri: string) =>
     }
   );
 
-export const makeSelectTotalTopLevelCommentsForUri = (uri: string) =>
+export const makeSelectTopLevelTotalCommentsForUri = (uri: string) =>
   createSelector(selectState, selectCommentsByUri, (state, byUri) => {
     const claimId = byUri[uri];
-    return state.totalTopLevelCommentsById[claimId] || 0;
+    return state.topLevelTotalCommentsById[claimId] || 0;
   });
 
 export const makeSelectRepliesForParentId = (id: string) =>
