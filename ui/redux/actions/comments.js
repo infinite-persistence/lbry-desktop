@@ -67,13 +67,14 @@ export function doCommentList(
       sort_by: sortBy,
     })
       .then((result: CommentListResponse) => {
-        const { items: comments, total_items } = result;
+        const { items: comments, total_items, total_pages } = result;
         dispatch({
           type: ACTIONS.COMMENT_LIST_COMPLETED,
           data: {
             comments,
             parentId,
             totalItems: total_items,
+            totalPages: total_pages,
             claimId: claimId,
             authorClaimId: authorChannelClaim ? authorChannelClaim.claim_id : undefined,
             uri: uri,
@@ -115,6 +116,7 @@ export function doCommentList(
             },
           });
         } else {
+          devToast(dispatch, `doCommentList: ${error.message}`);
           dispatch({
             type: ACTIONS.COMMENT_LIST_FAILED,
             data: error,
