@@ -28,7 +28,7 @@ declare type PerChannelSettings = {
 declare type CommentsState = {
   commentsByUri: { [string]: string },
   superChatsByUri: { [string]: { totalAmount: number, comments: Array<Comment> } },
-  byId: { [string]: Array<string> },
+  byId: { [string]: Array<string> }, // ClaimID -> list of fetched comment IDs
   totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron
   repliesByParentId: { [string]: Array<string> }, // ParentCommentID -> list of reply comments (fetched)
   totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
