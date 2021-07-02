@@ -86,7 +86,10 @@ declare type CommentListParams = {
 
 declare type CommentListResponse = {
   items: Array<Comment>,
+  page: number,
+  page_size: number,
   total_items: number,
+  total_pages: number,
   total_amount: number,
 };
 

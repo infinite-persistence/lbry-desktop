@@ -18,6 +18,7 @@ const DEBOUNCE_SCROLL_HANDLER_MS = 50;
 
 type Props = {
   topLevelComments: Array<Comment>,
+  topLevelTotalPages: number,
   commentsDisabledBySettings: boolean,
   fetchTopLevelComments: (string, number, number, number) => void,
   fetchReacts: (Array<string>) => Promise<any>,
@@ -28,7 +29,6 @@ type Props = {
   isFetchingComments: boolean,
   linkedComment: any,
   totalComments: number,
-  topLevelTotalComments: number,
   fetchingChannels: boolean,
   myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
   othersReactsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
@@ -43,13 +43,13 @@ function CommentList(props: Props) {
     resetComments,
     uri,
     topLevelComments,
+    topLevelTotalPages,
     commentsDisabledBySettings,
     claimIsMine,
     myChannels,
     isFetchingComments,
     linkedComment,
     totalComments,
-    topLevelTotalComments,
     fetchingChannels,
     myReactsByCommentId,
     othersReactsById,
@@ -73,7 +73,7 @@ function CommentList(props: Props) {
 
   const linkedCommentId = linkedComment && linkedComment.comment_id;
   const hasNoComments = !totalComments;
-  const moreBelow = topLevelTotalComments - topLevelComments.length > 0;
+  const moreBelow = page < topLevelTotalPages;
 
   const isMyComment = (channelId: string): boolean => {
     if (myChannels != null && channelId != null) {
@@ -160,10 +160,8 @@ function CommentList(props: Props) {
         // $FlowFixMe
         rect.left <= (window.innerWidth || document.documentElement.clientWidth);
 
-      if (isInViewport) {
-        if (topLevelComments.length < topLevelTotalComments) {
-          setPage(page + 1);
-        }
+      if (isInViewport && page < topLevelTotalPages) {
+        setPage(page + 1);
       }
     }, DEBOUNCE_SCROLL_HANDLER_MS);
 
@@ -179,7 +177,7 @@ function CommentList(props: Props) {
     isFetchingComments,
     readyToDisplayComments,
     topLevelComments.length,
-    topLevelTotalComments,
+    topLevelTotalPages,
   ]);
 
   function prepareComments(arrayOfComments, linkedComment /* , isFetchingComments */) {
