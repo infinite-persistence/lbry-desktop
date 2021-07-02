@@ -150,13 +150,20 @@ export const makeSelectCommentIdsForUri = (uri: string) =>
     return state.byId[claimId];
   });
 
-export const makeSelectMyReactionsForComment = (commentId: string) =>
+export const selectMyReactionsByCommentId = createSelector(selectState, (state) => state.myReactsByCommentId);
+
+/**
+ * makeSelectMyReactionsForComment
+ *
+ * @param commentIdChannelId Format = "commentId:MyChannelId".
+ */
+export const makeSelectMyReactionsForComment = (commentIdChannelId: string) =>
   createSelector(selectState, (state) => {
     if (!state.myReactsByCommentId) {
       return [];
     }
 
-    return state.myReactsByCommentId[commentId] || [];
+    return state.myReactsByCommentId[commentIdChannelId] || [];
   });
 
 export const makeSelectOthersReactionsForComment = (commentId: string) =>
@@ -169,17 +176,6 @@ export const makeSelectOthersReactionsForComment = (commentId: string) =>
   });
 
 export const selectPendingCommentReacts = createSelector(selectState, (state) => state.pendingCommentReactions);
-
-export const selectCommentsPendingReactFetchById = createSelector(
-  selectState,
-  (state) => state.commentsPendingReactFetchById
-);
-
-export const makeSelectNumPendingReactionFetch = (uri: string) =>
-  createSelector(selectState, selectCommentsByUri, selectCommentsPendingReactFetchById, (state, byUri, pendingById) => {
-    const claimId = byUri[uri];
-    return pendingById[claimId] ? pendingById[claimId].length || 0 : 0;
-  });
 
 export const selectSettingsByChannelId = createSelector(selectState, (state) => state.settingsByChannelId);
 
