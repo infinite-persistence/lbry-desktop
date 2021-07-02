@@ -30,9 +30,9 @@ type Props = {
   totalComments: number,
   totalTopLevelComments: number,
   fetchingChannels: boolean,
-  reactionsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
-  commentIds: any,
   myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
+  othersReactsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
+  commentIds: any,
   activeChannelId: ?string,
 };
 
@@ -51,9 +51,9 @@ function CommentList(props: Props) {
     totalComments,
     totalTopLevelComments,
     fetchingChannels,
-    reactionsById,
-    commentIds,
     myReactsByCommentId,
+    othersReactsById,
+    commentIds,
     activeChannelId,
   } = props;
   const commentRef = React.useRef();
@@ -68,7 +68,7 @@ function CommentList(props: Props) {
   // Display comments immediately if not fetching reactions
   // If not, wait to show comments until reactions are fetched
   const [readyToDisplayComments, setReadyToDisplayComments] = React.useState(
-    Boolean(reactionsById) || !ENABLE_COMMENT_REACTIONS
+    Boolean(othersReactsById) || !ENABLE_COMMENT_REACTIONS
   );
 
   const linkedCommentId = linkedComment && linkedComment.comment_id;
@@ -112,12 +112,12 @@ function CommentList(props: Props) {
     if (totalFetchedComments > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
       let idsForReactionFetch;
 
-      if (!reactionsById || !myReactsByCommentId) {
+      if (!othersReactsById || !myReactsByCommentId) {
         idsForReactionFetch = commentIds;
       } else {
         idsForReactionFetch = commentIds.filter((commentId) => {
           const key = activeChannelId ? `${commentId}:${activeChannelId}` : commentId;
-          return !reactionsById[key] || !myReactsByCommentId[key];
+          return !othersReactsById[key] || !myReactsByCommentId[key];
         });
       }
 
@@ -132,7 +132,7 @@ function CommentList(props: Props) {
   }, [
     totalFetchedComments,
     commentIds,
-    reactionsById,
+    othersReactsById,
     myReactsByCommentId,
     fetchReacts,
     uri,
