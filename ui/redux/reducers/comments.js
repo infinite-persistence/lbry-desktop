@@ -7,12 +7,12 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const defaultState: CommentsState = {
   commentById: {}, // commentId -> Comment
-  byId: {}, // ClaimID -> list of fetched comment IDs
-  totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron
-  repliesByParentId: {}, // ParentCommentID -> list of reply comments (fetched)
-  totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
-  topLevelCommentsById: {}, // ClaimID -> list of top level comments (fetched)
-  totalTopLevelCommentsById: {}, // ClaimID -> total top level comments in commentron
+  byId: {}, // ClaimID -> list of fetched comment IDs.
+  totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron.
+  repliesByParentId: {}, // ParentCommentID -> list of fetched replies.
+  totalRepliesByParentId: {}, // ParentCommentID -> total replies in commentron.
+  topLevelCommentsById: {}, // ClaimID -> list of fetched top level comments.
+  totalTopLevelCommentsById: {}, // ClaimID -> total top level comments in commentron.
   // TODO:
   // Remove commentsByUri
   // It is not needed and doesn't provide anything but confusion
