@@ -3,21 +3,12 @@ import * as ACTIONS from 'constants/action_types';
 import * as REACTION_TYPES from 'constants/reactions';
 import * as PAGES from 'constants/pages';
 import { SORT_BY, BLOCK_LEVEL } from 'constants/comment';
-import {
-  Lbry,
-  parseURI,
-  buildURI,
-  selectClaimsById,
-  selectClaimsByUri,
-  selectMyChannelClaims,
-  makeSelectClaimIdForUri,
-} from 'lbry-redux';
+import { Lbry, parseURI, buildURI, selectClaimsById, selectClaimsByUri, selectMyChannelClaims } from 'lbry-redux';
 import { doToast, doSeeNotifications } from 'redux/actions/notifications';
 import {
   makeSelectMyReactionsForComment,
   makeSelectOthersReactionsForComment,
   selectPendingCommentReacts,
-  selectCommentsPendingReactFetchById,
   selectModerationBlockList,
   selectModerationDelegatorsById,
 } from 'redux/selectors/comments';
@@ -25,6 +16,14 @@ import { makeSelectNotificationForCommentId } from 'redux/selectors/notification
 import { selectActiveChannelClaim } from 'redux/selectors/app';
 import { toHex } from 'util/hex';
 import Comments from 'comments';
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+function devToast(dispatch, msg) {
+  if (isDev) {
+    dispatch(doToast({ isError: true, message: msg }));
+  }
+}
 
 export function doCommentList(
   uri: string,
@@ -186,22 +185,16 @@ export function doSuperChatList(uri: string) {
   };
 }
 
-export function doCommentReactList(uri: string | null, commentId?: string) {
+export function doCommentReactList(commentIds: Array<string>) {
   return (dispatch: Dispatch, getState: GetState) => {
     const state = getState();
     const activeChannelClaim = selectActiveChannelClaim(state);
-    const claimId = makeSelectClaimIdForUri(uri)(state);
-    const commentIds = uri ? selectCommentsPendingReactFetchById(state)[claimId] : [commentId];
 
     dispatch({
       type: ACTIONS.COMMENT_REACTION_LIST_STARTED,
     });
 
-    const params: {
-      comment_ids: string,
-      channel_name?: string,
-      channel_id?: string,
-    } = {
+    const params: CommentReactListParams = {
       comment_ids: commentIds.join(','),
     };
 
@@ -218,11 +211,12 @@ export function doCommentReactList(uri: string | null, commentId?: string) {
           data: {
             myReactions: myReactions || {},
             othersReactions,
-            claimId,
+            channelId: activeChannelClaim ? activeChannelClaim.claim_id : undefined,
           },
         });
       })
       .catch((error) => {
+        devToast(dispatch, `doCommentReactList: ${error.message}`);
         dispatch({
           type: ACTIONS.COMMENT_REACTION_LIST_FAILED,
           data: error,
@@ -257,8 +251,9 @@ export function doCommentReact(commentId: string, type: string) {
       return;
     }
 
-    let myReacts = makeSelectMyReactionsForComment(commentId)(state);
-    const othersReacts = makeSelectOthersReactionsForComment(commentId)(state);
+    const reactKey = `${commentId}:${activeChannelClaim.claim_id}`;
+    const myReacts = makeSelectMyReactionsForComment(reactKey)(state);
+    const othersReacts = makeSelectOthersReactionsForComment(reactKey)(state);
     const params: CommentReactParams = {
       comment_ids: commentId,
       channel_name: activeChannelClaim.name,
@@ -292,8 +287,8 @@ export function doCommentReact(commentId: string, type: string) {
     dispatch({
       type: ACTIONS.COMMENT_REACTION_LIST_COMPLETED,
       data: {
-        myReactions: { [commentId]: myReactsObj },
-        othersReactions: { [commentId]: othersReacts },
+        myReactions: { [reactKey]: myReactsObj },
+        othersReactions: { [reactKey]: othersReacts },
       },
     });
 

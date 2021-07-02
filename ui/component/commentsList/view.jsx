@@ -14,13 +14,13 @@ import { ENABLE_COMMENT_REACTIONS } from 'config';
 import Empty from 'component/common/empty';
 import debounce from 'util/debounce';
 
-const DEBOUNCE_SCROLL_HANDLER_MS = 10;
+const DEBOUNCE_SCROLL_HANDLER_MS = 50;
 
 type Props = {
   topLevelComments: Array<Comment>,
   commentsDisabledBySettings: boolean,
   fetchTopLevelComments: (string, number, number, number) => void,
-  fetchReacts: (string) => Promise<any>,
+  fetchReacts: (Array<string>) => Promise<any>,
   resetComments: (string) => void,
   uri: string,
   claimIsMine: boolean,
@@ -31,8 +31,9 @@ type Props = {
   totalTopLevelComments: number,
   fetchingChannels: boolean,
   reactionsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
+  commentIds: any,
+  myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
   activeChannelId: ?string,
-  numPendingReactionFetch: number, // Number of fetched comments without a matching reactions-fetch.
 };
 
 function CommentList(props: Props) {
@@ -51,8 +52,9 @@ function CommentList(props: Props) {
     totalTopLevelComments,
     fetchingChannels,
     reactionsById,
+    commentIds,
+    myReactsByCommentId,
     activeChannelId,
-    numPendingReactionFetch,
   } = props;
   const commentRef = React.useRef();
   const spinnerRef = React.useRef();
@@ -61,6 +63,7 @@ function CommentList(props: Props) {
     ENABLE_COMMENT_REACTIONS ? SORT_BY.POPULARITY : SORT_BY.NEWEST
   );
   const [page, setPage] = React.useState(0);
+  const totalFetchedComments = commentIds ? commentIds.length : 0;
 
   // Display comments immediately if not fetching reactions
   // If not, wait to show comments until reactions are fetched
@@ -106,14 +109,36 @@ function CommentList(props: Props) {
   }, [fetchTopLevelComments, uri, page, resetComments, sort]);
 
   useEffect(() => {
-    if (numPendingReactionFetch > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
-      fetchReacts(uri)
-        .then(() => {
-          setReadyToDisplayComments(true);
-        })
-        .catch(() => setReadyToDisplayComments(true));
+    if (totalFetchedComments > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
+      let idsForReactionFetch;
+
+      if (!reactionsById || !myReactsByCommentId) {
+        idsForReactionFetch = commentIds;
+      } else {
+        idsForReactionFetch = commentIds.filter((commentId) => {
+          const key = activeChannelId ? `${commentId}:${activeChannelId}` : commentId;
+          return !reactionsById[key] || !myReactsByCommentId[key];
+        });
+      }
+
+      if (idsForReactionFetch.length !== 0) {
+        fetchReacts(idsForReactionFetch)
+          .then(() => {
+            setReadyToDisplayComments(true);
+          })
+          .catch(() => setReadyToDisplayComments(true));
+      }
     }
-  }, [fetchReacts, uri, numPendingReactionFetch, activeChannelId, fetchingChannels]);
+  }, [
+    totalFetchedComments,
+    commentIds,
+    reactionsById,
+    myReactsByCommentId,
+    fetchReacts,
+    uri,
+    activeChannelId,
+    fetchingChannels,
+  ]);
 
   useEffect(() => {
     if (readyToDisplayComments && linkedCommentId && commentRef && commentRef.current) {
