@@ -2,9 +2,9 @@ import { connect } from 'react-redux';
 import { makeSelectClaimIsMine, selectFetchingMyChannels, selectMyChannelClaims } from 'lbry-redux';
 import {
   makeSelectTopLevelCommentsForUri,
+  makeSelectTopLevelTotalPagesForUri,
   selectIsFetchingComments,
   makeSelectTotalCommentsCountForUri,
-  makeSelectTopLevelTotalCommentsForUri,
   selectOthersReactsById,
   makeSelectCommentsDisabledForUri,
   selectMyReactionsByCommentId,
@@ -19,8 +19,8 @@ const select = (state, props) => {
   return {
     myChannels: selectMyChannelClaims(state),
     topLevelComments: makeSelectTopLevelCommentsForUri(props.uri)(state),
+    topLevelTotalPages: makeSelectTopLevelTotalPagesForUri(props.uri)(state),
     totalComments: makeSelectTotalCommentsCountForUri(props.uri)(state),
-    topLevelTotalComments: makeSelectTopLevelTotalCommentsForUri(props.uri)(state),
     claimIsMine: makeSelectClaimIsMine(props.uri)(state),
     isFetchingComments: selectIsFetchingComments(state),
     commentingEnabled: IS_WEB ? Boolean(selectUserVerifiedEmail(state)) : true,

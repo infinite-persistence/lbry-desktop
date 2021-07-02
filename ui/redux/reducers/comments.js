@@ -220,7 +220,7 @@ export default handleActions(
     },
 
     [ACTIONS.COMMENT_LIST_COMPLETED]: (state: CommentsState, action: any) => {
-      const { comments, parentId, totalItems, claimId, uri, disabled, authorClaimId } = action.data;
+      const { comments, parentId, totalItems, totalPages, claimId, uri, disabled, authorClaimId } = action.data;
       const commentsDisabledChannelIds = [...state.commentsDisabledChannelIds];
 
       if (disabled) {
@@ -250,6 +250,7 @@ export default handleActions(
       const byId = Object.assign({}, state.byId);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const topLevelTotalCommentsById = Object.assign({}, state.topLevelTotalCommentsById);
+      const topLevelTotalPagesById = Object.assign({}, state.topLevelTotalPagesById);
       const commentsByUri = Object.assign({}, state.commentsByUri);
       const repliesByParentId = Object.assign({}, state.repliesByParentId);
       const totalRepliesByParentId = Object.assign({}, state.totalRepliesByParentId);
@@ -270,6 +271,7 @@ export default handleActions(
         // --- Top-level comments ---
         if (!parentId) {
           topLevelTotalCommentsById[claimId] = totalItems;
+          topLevelTotalPagesById[claimId] = totalPages;
 
           if (!topLevelCommentsById[claimId]) {
             topLevelCommentsById[claimId] = [];
@@ -314,6 +316,7 @@ export default handleActions(
         ...state,
         topLevelCommentsById,
         topLevelTotalCommentsById,
+        topLevelTotalPagesById,
         repliesByParentId,
         totalRepliesByParentId,
         byId,
@@ -372,6 +375,7 @@ export default handleActions(
       const totalCommentsById = Object.assign({}, state.totalCommentsById);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const topLevelTotalCommentsById = Object.assign({}, state.topLevelTotalCommentsById);
+      const topLevelTotalPagesById = Object.assign({}, state.topLevelTotalPagesById);
       const myReacts = Object.assign({}, state.myReactsByCommentId);
       const othersReacts = Object.assign({}, state.othersReactsByCommentId);
 
@@ -393,6 +397,7 @@ export default handleActions(
       delete totalCommentsById[claimId];
       delete topLevelCommentsById[claimId];
       delete topLevelTotalCommentsById[claimId];
+      delete topLevelTotalPagesById[claimId];
 
       return {
         ...state,
@@ -400,6 +405,7 @@ export default handleActions(
         totalCommentsById,
         topLevelCommentsById,
         topLevelTotalCommentsById,
+        topLevelTotalPagesById,
         myReactsByCommentId: myReacts,
         othersReactsByCommentId: othersReacts,
       };
