@@ -39,8 +39,8 @@ declare type CommentsState = {
   isLoadingByParentId: { [string]: boolean },
   myComments: ?Set<string>,
   isFetchingReacts: boolean,
-  myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
-  othersReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
+  myReactsByCommentId: ?{ [string]: Array<string> }, // {"CommentId:MyChannelId": ["like", "dislike", ...]}
+  othersReactsByCommentId: ?{ [string]: { [string]: number } }, // {"CommentId:MyChannelId": {"like": 2, "dislike": 2, ...}}
   pendingCommentReactions: Array<string>,
   moderationBlockList: ?Array<string>, // @KP rename to "personalBlockList"?
   adminBlockList: ?Array<string>,

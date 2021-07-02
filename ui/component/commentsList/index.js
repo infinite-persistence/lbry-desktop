@@ -27,8 +27,8 @@ const select = (state, props) => {
     commentsDisabledBySettings: makeSelectCommentsDisabledForUri(props.uri)(state),
     fetchingChannels: selectFetchingMyChannels(state),
     commentIds: makeSelectCommentIdsForUri(props.uri)(state),
-    reactionsById: selectOthersReactsById(state),
     myReactsByCommentId: selectMyReactionsByCommentId(state),
+    othersReactsById: selectOthersReactsById(state),
     activeChannelId: selectActiveChannelId(state),
   };
 };
