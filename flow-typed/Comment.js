@@ -39,9 +39,8 @@ declare type CommentsState = {
   isLoadingByParentId: { [string]: boolean },
   myComments: ?Set<string>,
   isFetchingReacts: boolean,
-  myReactsByCommentId: any,
-  othersReactsByCommentId: any,
-  commentsPendingReactFetchById: { [string]: Array<string> }, // ClaimId -> list of comment IDs without a reacts-fetch
+  myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
+  othersReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
   pendingCommentReactions: Array<string>,
   moderationBlockList: ?Array<string>, // @KP rename to "personalBlockList"?
   adminBlockList: ?Array<string>,
@@ -68,6 +67,14 @@ declare type CommentReactParams = {
   react_type: string,
   clear_types?: string,
   remove?: boolean,
+};
+
+declare type CommentReactListParams = {
+  comment_ids?: string,
+  channel_id?: string,
+  channel_name?: string,
+  wallet_id?: string,
+  react_types?: string,
 };
 
 declare type CommentListParams = {
