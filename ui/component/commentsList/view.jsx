@@ -17,6 +17,7 @@ import debounce from 'util/debounce';
 const DEBOUNCE_SCROLL_HANDLER_MS = 50;
 
 type Props = {
+  allCommentIds: any,
   topLevelComments: Array<Comment>,
   topLevelTotalPages: number,
   commentsDisabledBySettings: boolean,
@@ -32,12 +33,12 @@ type Props = {
   fetchingChannels: boolean,
   myReactsByCommentId: ?{ [string]: Array<string> }, // "CommentId:MyChannelId" -> reaction array (note the ID concatenation)
   othersReactsById: ?{ [string]: { [REACTION_TYPES.LIKE | REACTION_TYPES.DISLIKE]: number } },
-  commentIds: any,
   activeChannelId: ?string,
 };
 
 function CommentList(props: Props) {
   const {
+    allCommentIds,
     fetchTopLevelComments,
     fetchReacts,
     resetComments,
@@ -53,7 +54,6 @@ function CommentList(props: Props) {
     fetchingChannels,
     myReactsByCommentId,
     othersReactsById,
-    commentIds,
     activeChannelId,
   } = props;
   const commentRef = React.useRef();
@@ -63,7 +63,7 @@ function CommentList(props: Props) {
     ENABLE_COMMENT_REACTIONS ? SORT_BY.POPULARITY : SORT_BY.NEWEST
   );
   const [page, setPage] = React.useState(0);
-  const totalFetchedComments = commentIds ? commentIds.length : 0;
+  const totalFetchedComments = allCommentIds ? allCommentIds.length : 0;
 
   // Display comments immediately if not fetching reactions
   // If not, wait to show comments until reactions are fetched
@@ -108,14 +108,15 @@ function CommentList(props: Props) {
     }
   }, [fetchTopLevelComments, uri, page, resetComments, sort]);
 
+  // Fetch reacts
   useEffect(() => {
     if (totalFetchedComments > 0 && ENABLE_COMMENT_REACTIONS && !fetchingChannels) {
       let idsForReactionFetch;
 
       if (!othersReactsById || !myReactsByCommentId) {
-        idsForReactionFetch = commentIds;
+        idsForReactionFetch = allCommentIds;
       } else {
-        idsForReactionFetch = commentIds.filter((commentId) => {
+        idsForReactionFetch = allCommentIds.filter((commentId) => {
           const key = activeChannelId ? `${commentId}:${activeChannelId}` : commentId;
           return !othersReactsById[key] || !myReactsByCommentId[key];
         });
@@ -131,7 +132,7 @@ function CommentList(props: Props) {
     }
   }, [
     totalFetchedComments,
-    commentIds,
+    allCommentIds,
     othersReactsById,
     myReactsByCommentId,
     fetchReacts,

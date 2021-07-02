@@ -18,6 +18,7 @@ import CommentsList from './view';
 const select = (state, props) => {
   return {
     myChannels: selectMyChannelClaims(state),
+    allCommentIds: makeSelectCommentIdsForUri(props.uri)(state),
     topLevelComments: makeSelectTopLevelCommentsForUri(props.uri)(state),
     topLevelTotalPages: makeSelectTopLevelTotalPagesForUri(props.uri)(state),
     totalComments: makeSelectTotalCommentsCountForUri(props.uri)(state),
@@ -26,7 +27,6 @@ const select = (state, props) => {
     commentingEnabled: IS_WEB ? Boolean(selectUserVerifiedEmail(state)) : true,
     commentsDisabledBySettings: makeSelectCommentsDisabledForUri(props.uri)(state),
     fetchingChannels: selectFetchingMyChannels(state),
-    commentIds: makeSelectCommentIdsForUri(props.uri)(state),
     myReactsByCommentId: selectMyReactionsByCommentId(state),
     othersReactsById: selectOthersReactsById(state),
     activeChannelId: selectActiveChannelId(state),

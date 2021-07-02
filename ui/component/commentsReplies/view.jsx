@@ -35,21 +35,11 @@ function CommentsReplies(props: Props) {
   } = props;
 
   const [isExpanded, setExpanded] = React.useState(true);
-  // const [start, setStart] = React.useState(0);
-  // const [end, setEnd] = React.useState(COMMENT_PAGE_SIZE_REPLIES);
-  // const sortedComments = comments ? [...comments].reverse() : [];
-  // const linkedCommentId = linkedComment ? linkedComment.comment_id : '';
-  // const commentsIndexOfLInked = comments && sortedComments.findIndex((e) => e.comment_id === linkedCommentId);
 
   function showMore() {
     if (onShowMore) {
       onShowMore();
     }
-    // if (start > 0) {
-    //   setStart(0);
-    // } else {
-    //   setEnd(numDirectReplies);
-    // }
   }
 
   // todo: implement comment_list --mine in SDK so redux can grab with selectCommentIsMine
@@ -81,7 +71,7 @@ function CommentsReplies(props: Props) {
 
   // [] linked comments
 
-  const displayedComments = comments; // .slice(start, end);
+  const displayedComments = comments;
 
   return (
     Boolean(numDirectReplies) && (
