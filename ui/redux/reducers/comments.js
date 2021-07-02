@@ -7,7 +7,7 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const defaultState: CommentsState = {
   commentById: {}, // commentId -> Comment
-  byId: {}, // ClaimID -> list of comments
+  byId: {}, // ClaimID -> list of fetched comment IDs
   totalCommentsById: {}, // ClaimId -> ultimate total (including replies) in commentron
   repliesByParentId: {}, // ParentCommentID -> list of reply comments (fetched)
   totalRepliesByParentId: {}, // ParentCommentID -> total replies for parent in commentron
@@ -371,6 +371,22 @@ export default handleActions(
       const totalCommentsById = Object.assign({}, state.totalCommentsById);
       const topLevelCommentsById = Object.assign({}, state.topLevelCommentsById); // was byId {ClaimId -> [commentIds...]}
       const totalTopLevelCommentsById = Object.assign({}, state.totalTopLevelCommentsById);
+      const myReacts = Object.assign({}, state.myReactsByCommentId);
+      const othersReacts = Object.assign({}, state.othersReactsByCommentId);
+
+      function deleteReacts(reactObj, commentIdsToRemove) {
+        let reactionKeys = Object.keys(reactObj);
+        reactionKeys.forEach((rk) => {
+          const colonIndex = rk.indexOf(':');
+          const commentId = colonIndex === -1 ? rk : rk.substring(0, colonIndex);
+          if (commentIdsToRemove.includes(commentId)) {
+            delete reactObj[rk];
+          }
+        });
+      }
+
+      deleteReacts(myReacts, byId[claimId]);
+      deleteReacts(othersReacts, byId[claimId]);
 
       delete byId[claimId];
       delete totalCommentsById[claimId];
@@ -383,6 +399,8 @@ export default handleActions(
         totalCommentsById,
         topLevelCommentsById,
         totalTopLevelCommentsById,
+        myReactsByCommentId: myReacts,
+        othersReactsByCommentId: othersReacts,
       };
     },
 
