@@ -56,12 +56,11 @@ function CommentList(props: Props) {
     othersReactsById,
     activeChannelId,
   } = props;
+
   const commentRef = React.useRef();
   const spinnerRef = React.useRef();
-  const [sort, setSort] = usePersistedState(
-    'comment-sort-by',
-    ENABLE_COMMENT_REACTIONS ? SORT_BY.POPULARITY : SORT_BY.NEWEST
-  );
+  const DEFAULT_SORT = ENABLE_COMMENT_REACTIONS ? SORT_BY.POPULARITY : SORT_BY.NEWEST;
+  const [sort, setSort] = usePersistedState('comment-sort-by', DEFAULT_SORT);
   const [page, setPage] = React.useState(0);
   const totalFetchedComments = allCommentIds ? allCommentIds.length : 0;
 

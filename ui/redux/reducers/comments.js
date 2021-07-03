@@ -380,14 +380,16 @@ export default handleActions(
       const othersReacts = Object.assign({}, state.othersReactsByCommentId);
 
       function deleteReacts(reactObj, commentIdsToRemove) {
-        let reactionKeys = Object.keys(reactObj);
-        reactionKeys.forEach((rk) => {
-          const colonIndex = rk.indexOf(':');
-          const commentId = colonIndex === -1 ? rk : rk.substring(0, colonIndex);
-          if (commentIdsToRemove.includes(commentId)) {
-            delete reactObj[rk];
-          }
-        });
+        if (commentIdsToRemove && commentIdsToRemove.length > 0) {
+          let reactionKeys = Object.keys(reactObj);
+          reactionKeys.forEach((rk) => {
+            const colonIndex = rk.indexOf(':');
+            const commentId = colonIndex === -1 ? rk : rk.substring(0, colonIndex);
+            if (commentIdsToRemove.includes(commentId)) {
+              delete reactObj[rk];
+            }
+          });
+        }
       }
 
       deleteReacts(myReacts, byId[claimId]);
